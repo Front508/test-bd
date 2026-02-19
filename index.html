@@ -299,10 +299,10 @@ transition: opacity 0.2s;
   <span class="feedback-icon" id="feedback-icon"></span>
   <span id="feedback-text"></span>
 </div>
-<button class="btn-submit-multi" id="btn-submit-multi" onclick="submitMulti()" style="display: none; margin-top: 20px; width: 100%; padding: 16px; background: linear-gradient(135deg, var(--accent2), #06d6a0); border: none; border-radius: 10px; color: #fff; font-family: 'Unbounded', sans-serif; font-size: 0.85rem; font-weight: 700; cursor: pointer; letter-spacing: 0.05em;">
+<button class="btn-submit-multi" id="btn-submit-multi" style="display: none; margin-top: 20px; width: 100%; padding: 16px; background: linear-gradient(135deg, var(--accent2), #06d6a0); border: none; border-radius: 10px; color: #fff; font-family: 'Unbounded', sans-serif; font-size: 0.85rem; font-weight: 700; cursor: pointer; letter-spacing: 0.05em;">
   Подтвердить выбор →
 </button>
-<button class="btn-next" id="btn-next" onclick="nextQuestion()">
+<button class="btn-next" id="btn-next">
   Следующий вопрос →
 </button>
     </div>
@@ -314,35 +314,22 @@ transition: opacity 0.2s;
     </div>
     <div class="result-title" id="result-title"></div>
     <div class="result-sub" id="result-sub"></div>
-    <button class="btn-restart" onclick="restartQuiz()">↺ Пройти заново</button>
+    <button class="btn-restart" id="btn-restart">↺ Пройти заново</button>
   </div>
 </div>
 
 <!-- Блок навигации для перехода к любому вопросу -->
 <div style="position: fixed; top: 10px; right: 10px; z-index: 1000; background: var(--card); border: 1px solid var(--border); border-radius: 50px; padding: 8px 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.5); display: flex; gap: 10px; align-items: center; backdrop-filter: blur(5px);">
-  <button onclick="goToQuestion(0)" style="background: var(--accent); border: none; color: white; width: 36px; height: 36px; border-radius: 50%; cursor: pointer; font-weight: bold; font-size: 16px;" title="Первый вопрос">⏮️</button>
-  <button onclick="goToQuestion(current - 1)" style="background: var(--surface); border: 1px solid var(--border); color: var(--text); width: 36px; height: 36px; border-radius: 50%; cursor: pointer; font-weight: bold; font-size: 16px;" title="Предыдущий вопрос">◀</button>
+  <button id="btn-first" style="background: var(--accent); border: none; color: white; width: 36px; height: 36px; border-radius: 50%; cursor: pointer; font-weight: bold; font-size: 16px;" title="Первый вопрос">⏮️</button>
+  <button id="btn-prev" style="background: var(--surface); border: 1px solid var(--border); color: var(--text); width: 36px; height: 36px; border-radius: 50%; cursor: pointer; font-weight: bold; font-size: 16px;" title="Предыдущий вопрос">◀</button>
   
   <div style="display: flex; align-items: center; gap: 5px; background: var(--surface); padding: 3px 10px; border-radius: 40px;">
     <input type="number" id="navInput" min="1" max="90" value="1" style="width: 50px; background: transparent; border: none; color: var(--text); font-family: 'JetBrains Mono'; font-size: 14px; text-align: center; outline: none; border-bottom: 1px solid var(--accent);">
     <span style="color: var(--muted); font-size: 14px;">/ 90</span>
   </div>
   
-  <button onclick="goToQuestion(current + 1)" style="background: var(--surface); border: 1px solid var(--border); color: var(--text); width: 36px; height: 36px; border-radius: 50%; cursor: pointer; font-weight: bold; font-size: 16px;" title="Следующий вопрос">▶</button>
-  <button onclick="goToQuestion(89)" style="background: var(--accent2); border: none; color: white; width: 36px; height: 36px; border-radius: 50%; cursor: pointer; font-weight: bold; font-size: 16px;" title="Последний вопрос">⏭️</button>
-</div>
-
-<!-- Модальное окно для подтверждения перехода -->
-<div id="navModal" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.8); z-index: 2000; align-items: center; justify-content: center;">
-  <div style="background: var(--card); border: 1px solid var(--border); border-radius: 20px; padding: 30px; max-width: 400px; text-align: center;">
-    <div style="font-size: 40px; margin-bottom: 20px;">⚠️</div>
-    <h3 style="font-family: 'Unbounded'; margin-bottom: 15px;">Перейти к вопросу <span id="modalQuestionNum"></span>?</h3>
-    <p style="color: var(--muted); margin-bottom: 25px;">Текущий прогресс будет сохранён</p>
-    <div style="display: flex; gap: 15px; justify-content: center;">
-      <button onclick="confirmNavigation()" style="background: linear-gradient(135deg, var(--accent), #9f5ff5); border: none; color: white; padding: 12px 30px; border-radius: 10px; font-family: 'Unbounded'; cursor: pointer; font-weight: 700;">Перейти</button>
-      <button onclick="closeModal()" style="background: var(--surface); border: 1px solid var(--border); color: var(--text); padding: 12px 30px; border-radius: 10px; font-family: 'Unbounded'; cursor: pointer; font-weight: 700;">Отмена</button>
-    </div>
-  </div>
+  <button id="btn-next-nav" style="background: var(--surface); border: 1px solid var(--border); color: var(--text); width: 36px; height: 36px; border-radius: 50%; cursor: pointer; font-weight: bold; font-size: 16px;" title="Следующий вопрос">▶</button>
+  <button id="btn-last" style="background: var(--accent2); border: none; color: white; width: 36px; height: 36px; border-radius: 50%; cursor: pointer; font-weight: bold; font-size: 16px;" title="Последний вопрос">⏭️</button>
 </div>
 
 <script>
@@ -445,10 +432,6 @@ let answeredQuestions = {};
 let score = 0;
 let current = 0;
 let answered = false;
-let selectedMulti = [];
-let isMulti = false;
-let userAnswers = [];
-let userAnswersDetails = [];
 
 // ============ ФУНКЦИИ ============
 function saveQuiz() {
@@ -456,9 +439,7 @@ function saveQuiz() {
     sessionStorage.setItem('quizProgress', JSON.stringify({
       answeredQuestions, score, current
     }));
-  } catch(e) {
-    console.log('Ошибка сохранения:', e);
-  }
+  } catch(e) {}
 }
 
 function loadProgress() {
@@ -470,9 +451,7 @@ function loadProgress() {
       score = data.score || 0;
       current = data.current || 0;
     }
-  } catch(e) {
-    console.log('Ошибка загрузки:', e);
-  }
+  } catch(e) {}
 }
 
 function showFeedback(type, message) {
@@ -509,16 +488,6 @@ function selectAnswer(chosen) {
   saveQuiz();
 }
 
-function toggleMulti(index) {
-  // Функция не используется, но оставляем для совместимости
-  console.log('Мультивыбор отключен');
-}
-
-function submitMulti() {
-  // Функция не используется, но оставляем для совместимости
-  console.log('Мультивыбор отключен');
-}
-
 function nextQuestion() {
   if (current < questions.length - 1) {
     current++;
@@ -532,28 +501,21 @@ function nextQuestion() {
 function renderQuestion() {
   const q = questions[current];
   answered = false;
-  isMulti = false; // Отключаем мультивыбор
   
-  // Обновляем заголовки
   document.getElementById('q-number').textContent = `ВОПРОС ${String(current+1).padStart(2,'0')}`;
   document.getElementById('q-text').innerHTML = q.q.replace(/\n/g, '<br>');
   document.getElementById('progress-label').textContent = `Вопрос ${current+1} из ${questions.length}`;
   document.getElementById('score-label').textContent = `✓ ${score}`;
   document.getElementById('progress-fill').style.width = `${((current) / questions.length) * 100}%`;
   
-  // Обновляем поле навигации
-  const navEl = document.getElementById('navInput');
-  if (navEl) navEl.value = current + 1;
+  const navInput = document.getElementById('navInput');
+  if (navInput) navInput.value = current + 1;
   
-  // Скрываем/показываем кнопки
-  const submitBtn = document.getElementById('btn-submit-multi');
+  document.getElementById('btn-submit-multi').style.display = 'none';
   const nextBtn = document.getElementById('btn-next');
-  
-  submitBtn.style.display = 'none';
   nextBtn.classList.remove('show');
   nextBtn.textContent = current < questions.length - 1 ? 'Следующий вопрос →' : 'Завершить тест →';
   
-  // Очищаем и создаем опции
   const optionsEl = document.getElementById('options');
   optionsEl.innerHTML = '';
   
@@ -565,10 +527,8 @@ function renderQuestion() {
     optionsEl.appendChild(btn);
   });
   
-  // Сбрасываем фидбек
   document.getElementById('feedback').className = 'feedback';
   
-  // Если уже отвечали на этот вопрос - восстанавливаем
   if (answeredQuestions[current] !== undefined) {
     answered = true;
     const prev = answeredQuestions[current];
@@ -597,19 +557,18 @@ function showResult() {
   let title, sub;
   if (pct >= 90) { 
     title = 'Отлично!'; 
-    sub = `Вы ответили правильно на ${score} из ${questions.length} вопросов. Превосходный результат!`; 
+    sub = `Вы ответили правильно на ${score} из ${questions.length} вопросов.`; 
   } else if (pct >= 70) { 
     title = 'Хорошо!'; 
-    sub = `Вы ответили правильно на ${score} из ${questions.length} вопросов. Хороший результат, есть куда расти.`; 
+    sub = `Вы ответили правильно на ${score} из ${questions.length} вопросов.`; 
   } else if (pct >= 50) { 
     title = 'Удовлетворительно'; 
-    sub = `Вы ответили правильно на ${score} из ${questions.length} вопросов. Стоит повторить материал.`; 
+    sub = `Вы ответили правильно на ${score} из ${questions.length} вопросов.`; 
   } else { 
     title = 'Нужно подготовиться'; 
-    sub = `Вы ответили правильно на ${score} из ${questions.length} вопросов. Рекомендуем изучить тему глубже.`; 
+    sub = `Вы ответили правильно на ${score} из ${questions.length} вопросов.`; 
   }
   
-  // Собираем детальные результаты
   let detailsHTML = '';
   const keys = Object.keys(answeredQuestions).map(Number).sort((a,b) => a-b);
   
@@ -664,82 +623,53 @@ function restartQuiz() {
   renderQuestion();
 }
 
-// ============ ФУНКЦИИ НАВИГАЦИИ ============
 function goToQuestion(index) {
   if (index < 0) index = 0;
   if (index >= questions.length) index = questions.length - 1;
   
   current = index;
   renderQuestion();
-  
-  const navEl = document.getElementById('navInput');
-  if (navEl) navEl.value = current + 1;
-}
-
-function closeModal() {
-  document.getElementById('navModal').style.display = 'none';
-}
-
-function confirmNavigation() {
-  closeModal();
-  goToQuestion(targetQuestion);
 }
 
 // ============ ИНИЦИАЛИЗАЦИЯ ============
-document.addEventListener('DOMContentLoaded', function() {
-  console.log('DOM загружен, инициализация теста...');
-  
-  // Загружаем прогресс
+window.onload = function() {
+  console.log('Страница загружена');
   loadProgress();
-  
-  // Рендерим первый вопрос
   renderQuestion();
   
-  // Настраиваем обработчик для поля ввода
+  // Навигация
+  document.getElementById('btn-first').onclick = () => goToQuestion(0);
+  document.getElementById('btn-prev').onclick = () => goToQuestion(current - 1);
+  document.getElementById('btn-next-nav').onclick = () => goToQuestion(current + 1);
+  document.getElementById('btn-last').onclick = () => goToQuestion(questions.length - 1);
+  document.getElementById('btn-next').onclick = nextQuestion;
+  document.getElementById('btn-restart').onclick = restartQuiz;
+  
   const navInput = document.getElementById('navInput');
-  if (navInput) {
-    navInput.addEventListener('keypress', function(e) {
-      if (e.key === 'Enter') {
-        let val = parseInt(this.value);
-        if (isNaN(val)) val = 1;
-        if (val < 1) val = 1;
-        if (val > questions.length) val = questions.length;
-        goToQuestion(val - 1);
-      }
-    });
-  }
-});
+  navInput.addEventListener('keypress', function(e) {
+    if (e.key === 'Enter') {
+      let val = parseInt(this.value);
+      if (isNaN(val)) val = 1;
+      if (val < 1) val = 1;
+      if (val > questions.length) val = questions.length;
+      goToQuestion(val - 1);
+    }
+  });
+};
 
-// Глобальные функции для onclick
-window.selectAnswer = selectAnswer;
-window.nextQuestion = nextQuestion;
-window.restartQuiz = restartQuiz;
-window.goToQuestion = goToQuestion;
-window.toggleMulti = toggleMulti;
-window.submitMulti = submitMulti;
-window.confirmNavigation = confirmNavigation;
-window.closeModal = closeModal;
-
-// Добавляем обработчик клавиш для навигации
+// Клавиши
 document.addEventListener('keydown', function(e) {
-  if ((e.altKey || e.ctrlKey) && e.key === 'ArrowLeft') {
+  if (e.altKey && e.key === 'ArrowLeft') {
     e.preventDefault();
     goToQuestion(current - 1);
-  } else if ((e.altKey || e.ctrlKey) && e.key === 'ArrowRight') {
+  } else if (e.altKey && e.key === 'ArrowRight') {
     e.preventDefault();
     goToQuestion(current + 1);
-  } else if ((e.altKey || e.ctrlKey) && e.key === 'Home') {
-    e.preventDefault();
-    goToQuestion(0);
-  } else if ((e.altKey || e.ctrlKey) && e.key === 'End') {
-    e.preventDefault();
-    goToQuestion(questions.length - 1);
   }
 });
 </script>
 
 <style>
-/* Стили для поля ввода с браузерными стрелочками */
 #navInput::-webkit-outer-spin-button,
 #navInput::-webkit-inner-spin-button {
   -webkit-appearance: none;
@@ -748,49 +678,11 @@ document.addEventListener('keydown', function(e) {
 #navInput[type=number] {
   -moz-appearance: textfield;
 }
-
-/* Адаптив для мобильных */
 @media (max-width: 600px) {
-  .container {
-    margin-top: 70px;
-  }
-  
-  div[style*="position: fixed; top: 10px; right: 10px;"] {
-    padding: 5px 10px;
-    gap: 5px;
-  }
-  
-  div[style*="position: fixed; top: 10px; right: 10px;"] button {
-    width: 32px;
-    height: 32px;
-    font-size: 14px;
-  }
-  
-  #navInput {
-    width: 45px;
-    font-size: 13px;
-  }
-}
-
-@media (max-width: 380px) {
-  .container {
-    margin-top: 80px;
-  }
-  
-  div[style*="position: fixed; top: 10px; right: 10px;"] button {
-    width: 28px;
-    height: 28px;
-    font-size: 12px;
-  }
-  
-  #navInput {
-    width: 40px;
-    font-size: 12px;
-  }
-  
-  span[style*="color: var(--muted);"] {
-    font-size: 12px;
-  }
+  .container { margin-top: 70px; }
+  div[style*="position: fixed; top: 10px; right: 10px;"] { padding: 5px 10px; gap: 5px; }
+  div[style*="position: fixed; top: 10px; right: 10px;"] button { width: 32px; height: 32px; font-size: 14px; }
+  #navInput { width: 45px; font-size: 13px; }
 }
 </style>
 </body>
