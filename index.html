@@ -278,8 +278,8 @@ transition: opacity 0.2s;
 <body>
 <div class="container">
   <header>
-    <h1>АНАЛИЗ И ВИЗУАЛИЗАЦИЯ ДАННЫХ</h1>
-    <p>Тест</p>
+    <h1>БАЗЫ ДАННЫХ</h1>
+    <p>Тест · 90 вопросов · Мгновенная проверка ответов</p>
   </header>
 
   <div id="quiz-area">
@@ -329,10 +329,7 @@ const questions = [
   { q: "7. Последовательность действий над базой данных, в которой либо все действия выполняются успешно, либо не выполняется ни одно из них, называется:", opts: ["Транзакция","Последовательность","Протокол","Операция"], ans: 0 },
   { q: "8. Что означает ACID в контексте транзакций?", opts: ["Автоматизация, целостность, доступность, надёжность","Адаптивность, контроль, идентичность, динамичность","Агрегация, кэширование, индексация, декомпозиция","Атомарность, согласованность, изоляция, надежность"], ans: 3 },
   { q: "9. Что такое первичный ключ (PRIMARY KEY) в реляционной базе данных?", opts: ["Любой столбец с уникальными значениями","Внешний ключ, ссылающийся на другую таблицу","Поле (или набор полей), однозначно идентифицирующее запись в таблице","Индекс для ускорения поиска"], ans: 2 },
-  { q: "10а. Сопоставление: PRIMARY KEY — это ограничение, которое:", opts: ["Связывает запись с записью в другой таблице","Гарантирует уникальность значений","Обеспечивает уникальность и не допускает NULL в ключе","Гарантирует, что значение не равно NULL"], ans: 2 },
-  { q: "10б. Сопоставление: FOREIGN KEY — это ограничение, которое:", opts: ["Связывает запись с записью в другой таблице","Гарантирует уникальность значений","Обеспечивает уникальность и не допускает NULL в ключе","Гарантирует, что значение не равно NULL"], ans: 0 },
-  { q: "10в. Сопоставление: NOT NULL — это ограничение, которое:", opts: ["Связывает запись с записью в другой таблице","Гарантирует уникальность значений","Обеспечивает уникальность и не допускает NULL в ключе","Гарантирует, что значение не равно NULL"], ans: 3 },
-  { q: "10г. Сопоставление: UNIQUE — это ограничение, которое:", opts: ["Связывает запись с записью в другой таблице","Гарантирует уникальность значений","Обеспечивает уникальность и не допускает NULL в ключе","Гарантирует, что значение не равно NULL"], ans: 1 },
+  { q: "10. Сопоставьте тип ограничения с его назначением:", opts: ["1(PRIMARY KEY)-в(уникальность, не NULL), 2(FOREIGN KEY)-а(связь с другой таблицей), 3(NOT NULL)-г(значение не NULL), 4(UNIQUE)-б(уникальность значений)","1(PRIMARY KEY)-а(связь с другой таблицей), 2(FOREIGN KEY)-б(уникальность значений), 3(NOT NULL)-в(уникальность, не NULL), 4(UNIQUE)-г(значение не NULL)","1(PRIMARY KEY)-б(уникальность значений), 2(FOREIGN KEY)-а(связь с другой таблицей), 3(NOT NULL)-г(значение не NULL), 4(UNIQUE)-в(уникальность, не NULL)","1(PRIMARY KEY)-в(уникальность, не NULL), 2(FOREIGN KEY)-г(значение не NULL), 3(NOT NULL)-а(связь с другой таблицей), 4(UNIQUE)-б(уникальность значений)"], ans: 0 },
   { q: "11. Где обычно хранятся параметры конфигурации СУБД?", opts: ["В оперативной памяти без сохранения","HTTP","В системной таблице","В конфигурационном файле (postgresql.conf, my.cnf)"], ans: 3 },
   { q: "12. Какой параметр отвечает за максимальное количество одновременных подключений к СУБД?", opts: ["query_cache_size","max_connections","innodb_buffer_pool_size","log_level"], ans: 1 },
   { q: "13. Что такое параметр конфигурации СУБД?", opts: ["Название таблицы в базе данных","Команда для выполнения запроса","Тип индекса","Настраиваемое значение, влияющее на поведение сервера или сессии данных"], ans: 3 },
@@ -416,25 +413,33 @@ const questions = [
 ];
 
 
-let current = 0;
+let answeredQuestions = {}; // { index: { chosen, correct, isCorrect } }
 let score = 0;
+let current = 0;
 let answered = false;
-let selectedMulti = []; // для хранения выбранных вариантов
-let isMulti = false; // флаг мультивыбора
+let selectedMulti = [];
+let isMulti = false;
 let userAnswers = [];
 let userAnswersDetails = [];
 
-// Загрузка сохраненного прогресса
-let saved = JSON.parse(localStorage.getItem('quiz'));
-if (saved) {
-  current = saved.current;
-  score = saved.score;
-  answered = saved.answered;
-}
+// Загружаем сохранённый прогресс
+(function loadProgress() {
+  try {
+    const saved = JSON.parse(sessionStorage.getItem('quizProgress'));
+    if (saved) {
+      answeredQuestions = saved.answeredQuestions || {};
+      score = saved.score || 0;
+      current = saved.current || 0;
+    }
+  } catch(e) {}
+})();
 
-// Функция сохранения
 function saveQuiz() {
-  localStorage.setItem('quiz', JSON.stringify({current, score, answered}));
+  try {
+    sessionStorage.setItem('quizProgress', JSON.stringify({
+      answeredQuestions, score, current
+    }));
+  } catch(e) {}
 }
 
 function renderQuestion() {
@@ -444,10 +449,12 @@ function renderQuestion() {
   isMulti = Array.isArray(q.multi);
 
   document.getElementById('q-number').textContent = `ВОПРОС ${String(current+1).padStart(2,'0')}`;
-  document.getElementById('q-text').textContent = q.q;
+  document.getElementById('q-text').innerHTML = q.q.replace(/\\n/g, '<br>');
   document.getElementById('progress-label').textContent = `Вопрос ${current+1} из ${questions.length}`;
   document.getElementById('score-label').textContent = `✓ ${score}`;
   document.getElementById('progress-fill').style.width = `${(current / questions.length) * 100}%`;
+  const navEl = document.getElementById('navInput');
+  if (navEl) navEl.value = current + 1;
 
   const feedback = document.getElementById('feedback');
   feedback.className = 'feedback';
@@ -466,6 +473,29 @@ function renderQuestion() {
     btn.onclick = isMulti ? () => toggleMulti(i) : () => selectAnswer(i);
     optionsEl.appendChild(btn);
   });
+
+  // Если уже отвечали — восстановить и заблокировать
+  if (answeredQuestions[current] !== undefined) {
+    answered = true;
+    const prev = answeredQuestions[current];
+    const opts = document.querySelectorAll('.option');
+    opts.forEach(o => { o.disabled = true; });
+    if (prev.isCorrect) {
+      opts[prev.chosen].classList.add('correct');
+      const fb = document.getElementById('feedback');
+      fb.className = 'feedback correct-fb show';
+      document.getElementById('feedback-icon').textContent = '✓';
+      document.getElementById('feedback-text').textContent = 'Правильно!';
+    } else {
+      opts[prev.chosen].classList.add('wrong');
+      opts[prev.correct].classList.add('correct');
+      const fb = document.getElementById('feedback');
+      fb.className = 'feedback wrong-fb show';
+      document.getElementById('feedback-icon').textContent = '✗';
+      document.getElementById('feedback-text').textContent = 'Правильный ответ: ' + q.opts[prev.correct];
+    }
+    document.getElementById('btn-next').classList.add('show');
+  }
 // Показываем нужную кнопку (добавьте этот код в конец renderQuestion)
 const submitBtn = document.getElementById('btn-submit-multi');
 const nextBtn = document.getElementById('btn-next');
@@ -541,7 +571,7 @@ function submitMulti() {
     type: 'multi'
   };
   
-  localStorage.setItem('userAnswers', JSON.stringify(userAnswersDetails));
+  sessionStorage.setItem('userAnswers', JSON.stringify(userAnswersDetails));
 }
 
 // Показ подсказки
@@ -573,20 +603,10 @@ function selectAnswer(chosen) {
   }
   
   answered = true;
+  answeredQuestions[current] = { chosen: chosen, correct: q.ans, isCorrect: isCorrect };
   document.getElementById('score-label').textContent = `✓ ${score}`;
   document.getElementById('btn-next').classList.add('show');
   saveQuiz();
-    // Сохраняем ответ пользователя
-  userAnswers[current] = chosen;
-  userAnswersDetails[current] = {
-    question: q.q,
-    userAnswer: q.opts[chosen],
-    correctAnswer: q.opts[q.ans],
-    isCorrect: isCorrect,
-    type: 'single'
-  };
-  
-  localStorage.setItem('userAnswers', JSON.stringify(userAnswersDetails));
 }
 
 function nextQuestion() {
@@ -595,6 +615,8 @@ function nextQuestion() {
     showResult();
   } else {
     document.getElementById('question-card').style.animation = 'none';
+    const navInput = document.getElementById('navInput');
+    if (navInput) navInput.value = current + 1;
     setTimeout(() => {
       document.getElementById('question-card').style.animation = '';
       renderQuestion();
@@ -618,7 +640,7 @@ function showResult() {
   else { title = 'Нужно подготовиться'; sub = `Вы ответили правильно на ${score} из ${questions.length} вопросов. Рекомендуем изучить тему глубже.`; }
 
   // Загружаем ответы из localStorage
-  const saved = localStorage.getItem('userAnswers');
+  const saved = sessionStorage.getItem('userAnswers');
   if (saved) {
     userAnswersDetails = JSON.parse(saved);
   }
@@ -678,10 +700,10 @@ function showResult() {
 }
 
 function restartQuiz() {
-  localStorage.removeItem('userAnswers');
+  sessionStorage.removeItem('userAnswers');
   userAnswers = [];
   userAnswersDetails = [];
-  localStorage.removeItem('quiz');
+  sessionStorage.removeItem('quiz');
   current = 0; score = 0;
   document.getElementById('result-screen').className = 'result-screen';
   document.getElementById('quiz-area').style.display = 'block';
@@ -691,6 +713,11 @@ function restartQuiz() {
 }
 
 renderQuestion();
+// Обновить счётчик после полной загрузки DOM (навигатор рендерится после скрипта)
+document.addEventListener('DOMContentLoaded', function() {
+  const navEl = document.getElementById('navInput');
+  if (navEl) navEl.value = current + 1;
+});
 </script>
 <!-- Блок навигации для перехода к любому вопросу -->
 <div style="position: fixed; top: 10px; right: 10px; z-index: 1000; background: var(--card); border: 1px solid var(--border); border-radius: 50px; padding: 8px 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.5); display: flex; gap: 10px; align-items: center; backdrop-filter: blur(5px);">
@@ -724,25 +751,9 @@ renderQuestion();
 let targetQuestion = 0;
 
 function goToQuestion(index) {
-  const totalQuestions = questions.length;
-  
-  // Проверка границ
   if (index < 0) index = 0;
-  if (index >= totalQuestions) index = totalQuestions - 1;
-  
-  // Если это вызов с кнопки навигации (не из модального окна)
-  if (arguments.length === 1) {
-    // Если вопрос уже отвечен и не последний, показываем предупреждение
-    if (answered && index !== current) {
-      targetQuestion = index;
-      document.getElementById('modalQuestionNum').textContent = index + 1;
-      document.getElementById('navModal').style.display = 'flex';
-      return;
-    }
-    
-    // Просто переходим
-    performNavigation(index);
-  }
+  if (index >= questions.length) index = questions.length - 1;
+  performNavigation(index);
 }
 
 function performNavigation(index) {
