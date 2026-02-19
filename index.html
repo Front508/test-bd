@@ -1,689 +1,652 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Тест: Базы данных</title>
-<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Unbounded:wght@400;700;900&display=swap" rel="stylesheet">
-<style>
-  :root {
-    --bg: #0a0a0f;
-    --surface: #12121a;
-    --card: #1a1a26;
-    --border: #2a2a3e;
-    --accent: #7c3aed;
-    --accent2: #06d6a0;
-    --wrong: #ef4444;
-    --text: #e2e8f0;
-    --muted: #64748b;
-    --correct-bg: #052e16;
-    --wrong-bg: #2d0a0a;
-  }
-  * { margin: 0; padding: 0; box-sizing: border-box; }
-  body {
-    background: var(--bg);
-    color: var(--text);
-    font-family: 'JetBrains Mono', monospace;
-    min-height: 100vh;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    padding: 20px;
-  }
-  body::before {
-    content: '';
-    position: fixed;
-    top: 0; left: 0; right: 0; bottom: 0;
-    background: radial-gradient(ellipse at 20% 20%, #7c3aed22 0%, transparent 50%),
-                radial-gradient(ellipse at 80% 80%, #06d6a022 0%, transparent 50%);
-    pointer-events: none;
-    z-index: 0;
-  }
-
-.container { max-width: 800px; width: 100%; position: relative; z-index: 1; }
-
-/* HEADER */
-header { text-align: center; padding: 40px 0 30px; }
-header h1 {
-font-family: 'Unbounded', sans-serif;
-font-size: clamp(1.4rem, 4vw, 2.2rem);
-font-weight: 900;
-background: linear-gradient(135deg, #7c3aed, #06d6a0);
--webkit-background-clip: text;
--webkit-text-fill-color: transparent;
-background-clip: text;
-letter-spacing: -0.02em;
-line-height: 1.2;
-}
-header p { color: var(--muted); margin-top: 10px; font-size: 0.85rem; }
-
-/* PROGRESS */
-.progress-bar-wrap {
-background: var(--border);
-border-radius: 100px;
-height: 6px;
-margin-bottom: 8px;
-overflow: hidden;
-}
-.progress-bar-fill {
-height: 100%;
-background: linear-gradient(90deg, #7c3aed, #06d6a0);
-border-radius: 100px;
-transition: width 0.4s ease;
-}
-.progress-text {
-display: flex;
-justify-content: space-between;
-font-size: 0.75rem;
-color: var(--muted);
-margin-bottom: 24px;
-}
-.score-live { color: var(--accent2); font-weight: 700; }
-
-/* QUESTION CARD */
-.question-card {
-background: var(--card);
-border: 1px solid var(--border);
-border-radius: 16px;
-padding: 28px;
-margin-bottom: 16px;
-animation: slideIn 0.3s ease;
-}
-@keyframes slideIn {
-from { opacity: 0; transform: translateY(16px); }
-to   { opacity: 1; transform: translateY(0); }
-}
-.q-number {
-font-size: 0.7rem;
-color: var(--accent);
-font-weight: 700;
-letter-spacing: 0.1em;
-text-transform: uppercase;
-margin-bottom: 12px;
-}
-.q-text {
-font-size: clamp(0.9rem, 2.5vw, 1.05rem);
-line-height: 1.7;
-color: var(--text);
-margin-bottom: 24px;
-font-family: 'JetBrains Mono', monospace;
-}
-
-/* OPTIONS */
-.options { display: flex; flex-direction: column; gap: 10px; }
-.option {
-background: var(--surface);
-border: 1.5px solid var(--border);
-border-radius: 10px;
-padding: 14px 18px;
-cursor: pointer;
-transition: all 0.18s ease;
-font-family: 'JetBrains Mono', monospace;
-font-size: 0.88rem;
-color: var(--text);
-text-align: left;
-line-height: 1.5;
-position: relative;
-overflow: hidden;
-}
-.option::before {
-content: '';
-position: absolute;
-left: 0; top: 0; bottom: 0;
-width: 3px;
-background: var(--accent);
-opacity: 0;
-transition: opacity 0.2s;
-}
-.option:hover:not(:disabled) {
-border-color: var(--accent);
-background: #1e1e30;
-transform: translateX(4px);
-}
-.option:hover:not(:disabled)::before { opacity: 1; }
-.option:disabled { cursor: default; }
-
-.option.correct {
-background: var(--correct-bg);
-border-color: var(--accent2);
-color: var(--accent2);
-transform: translateX(4px);
-}
-.option.correct::before { background: var(--accent2); opacity: 1; }
-.option.wrong {
-background: var(--wrong-bg);
-border-color: var(--wrong);
-color: var(--wrong);
-}
-.option.wrong::before { background: var(--wrong); opacity: 1; }
-.option.disabled-grey {
-opacity: 0.35;
-}
-
-.option.selected {
-  background: var(--accent);
-  border-color: var(--accent2);
-  color: white;
-  transform: translateX(4px);
-}
-
-/* FEEDBACK */
-.feedback {
-margin-top: 16px;
-padding: 14px 18px;
-border-radius: 10px;
-font-size: 0.85rem;
-font-weight: 700;
-display: none;
-align-items: center;
-gap: 10px;
-animation: popIn 0.25s ease;
-}
-@keyframes popIn {
-from { transform: scale(0.95); opacity: 0; }
-to   { transform: scale(1); opacity: 1; }
-}
-.feedback.show { display: flex; }
-.feedback.correct-fb {
-background: var(--correct-bg);
-border: 1px solid var(--accent2);
-color: var(--accent2);
-}
-.feedback.wrong-fb {
-background: var(--wrong-bg);
-border: 1px solid var(--wrong);
-color: var(--wrong);
-}
-.feedback-icon { font-size: 1.3rem; flex-shrink: 0; }
-
-/* NEXT BUTTON */
-.btn-next {
-margin-top: 20px;
-width: 100%;
-padding: 16px;
-background: linear-gradient(135deg, var(--accent), #9f5ff5);
-border: none;
-border-radius: 10px;
-color: #fff;
-font-family: 'Unbounded', sans-serif;
-font-size: 0.85rem;
-font-weight: 700;
-cursor: pointer;
-display: none;
-transition: opacity 0.2s, transform 0.2s;
-letter-spacing: 0.05em;
-}
-.btn-next.show { display: block; }
-.btn-next:hover { opacity: 0.9; transform: translateY(-2px); }
-
-/* RESULT SCREEN */
-.result-screen {
-display: none;
-text-align: center;
-padding: 60px 20px;
-animation: slideIn 0.4s ease;
-}
-.result-screen.show { display: block; }
-.result-circle {
-width: 160px; height: 160px;
-border-radius: 50%;
-background: conic-gradient(var(--accent2) var(--pct), var(--border) 0);
-display: flex; align-items: center; justify-content: center;
-margin: 0 auto 30px;
-position: relative;
-}
-.result-circle::after {
-content: '';
-position: absolute;
-width: 120px; height: 120px;
-border-radius: 50%;
-background: var(--card);
-}
-.result-score {
-position: relative; z-index: 1;
-font-family: 'Unbounded', sans-serif;
-font-size: 2rem;
-font-weight: 900;
-color: var(--accent2);
-}
-.result-title {
-font-family: 'Unbounded', sans-serif;
-font-size: 1.5rem;
-font-weight: 900;
-margin-bottom: 12px;
-background: linear-gradient(135deg, #7c3aed, #06d6a0);
--webkit-background-clip: text;
--webkit-text-fill-color: transparent;
-background-clip: text;
-}
-.result-sub { color: var(--muted); font-size: 0.9rem; margin-bottom: 30px; line-height: 1.7; }
-.btn-restart {
-padding: 16px 40px;
-background: linear-gradient(135deg, var(--accent), #06d6a0);
-border: none; border-radius: 10px;
-color: #fff;
-font-family: 'Unbounded', sans-serif;
-font-size: 0.85rem;
-font-weight: 700;
-cursor: pointer;
-letter-spacing: 0.05em;
-transition: opacity 0.2s;
-}
-.btn-restart:hover { opacity: 0.85; }
-
-/* QUIZ AREA */
-#quiz-area { display: block; }
-</style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Тест: Базы данных</title>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Unbounded:wght@400;700;900&display=swap" rel="stylesheet">
+    <style>
+        /* Стили (такие же, как в вашем исходном коде, я их сократил для краткости, но вы можете оставить полные) */
+        :root {
+            --bg: #0a0a0f;
+            --surface: #12121a;
+            --card: #1a1a26;
+            --border: #2a2a3e;
+            --accent: #7c3aed;
+            --accent2: #06d6a0;
+            --wrong: #ef4444;
+            --text: #e2e8f0;
+            --muted: #64748b;
+            --correct-bg: #052e16;
+            --wrong-bg: #2d0a0a;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background: var(--bg);
+            color: var(--text);
+            font-family: 'JetBrains Mono', monospace;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+        }
+        .container { max-width: 800px; width: 100%; }
+        header { text-align: center; padding: 40px 0 30px; }
+        header h1 {
+            font-family: 'Unbounded', sans-serif;
+            font-size: clamp(1.4rem, 4vw, 2.2rem);
+            font-weight: 900;
+            background: linear-gradient(135deg, #7c3aed, #06d6a0);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        .progress-bar-wrap {
+            background: var(--border);
+            border-radius: 100px;
+            height: 6px;
+            margin-bottom: 8px;
+            overflow: hidden;
+        }
+        .progress-bar-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #7c3aed, #06d6a0);
+            transition: width 0.4s ease;
+        }
+        .progress-text {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.75rem;
+            color: var(--muted);
+            margin-bottom: 24px;
+        }
+        .score-live { color: var(--accent2); font-weight: 700; }
+        .question-card {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 28px;
+            margin-bottom: 16px;
+        }
+        .q-number {
+            font-size: 0.7rem;
+            color: var(--accent);
+            font-weight: 700;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            margin-bottom: 12px;
+        }
+        .q-text {
+            font-size: clamp(0.9rem, 2.5vw, 1.05rem);
+            line-height: 1.7;
+            margin-bottom: 24px;
+        }
+        .options { display: flex; flex-direction: column; gap: 10px; }
+        .option {
+            background: var(--surface);
+            border: 1.5px solid var(--border);
+            border-radius: 10px;
+            padding: 14px 18px;
+            cursor: pointer;
+            transition: all 0.18s ease;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.88rem;
+            color: var(--text);
+            text-align: left;
+        }
+        .option:hover:not(:disabled) {
+            border-color: var(--accent);
+            background: #1e1e30;
+            transform: translateX(4px);
+        }
+        .option.correct {
+            background: var(--correct-bg);
+            border-color: var(--accent2);
+            color: var(--accent2);
+        }
+        .option.wrong {
+            background: var(--wrong-bg);
+            border-color: var(--wrong);
+            color: var(--wrong);
+        }
+        .feedback {
+            margin-top: 16px;
+            padding: 14px 18px;
+            border-radius: 10px;
+            font-size: 0.85rem;
+            font-weight: 700;
+            display: none;
+            align-items: center;
+            gap: 10px;
+        }
+        .feedback.show { display: flex; }
+        .feedback.correct-fb {
+            background: var(--correct-bg);
+            border: 1px solid var(--accent2);
+            color: var(--accent2);
+        }
+        .feedback.wrong-fb {
+            background: var(--wrong-bg);
+            border: 1px solid var(--wrong);
+            color: var(--wrong);
+        }
+        .btn-next {
+            margin-top: 20px;
+            width: 100%;
+            padding: 16px;
+            background: linear-gradient(135deg, var(--accent), #9f5ff5);
+            border: none;
+            border-radius: 10px;
+            color: #fff;
+            font-family: 'Unbounded', sans-serif;
+            font-size: 0.85rem;
+            font-weight: 700;
+            cursor: pointer;
+            display: none;
+        }
+        .btn-next.show { display: block; }
+        .result-screen {
+            display: none;
+            text-align: center;
+            padding: 60px 20px;
+        }
+        .result-screen.show { display: block; }
+        .result-circle {
+            width: 160px; height: 160px;
+            border-radius: 50%;
+            background: conic-gradient(var(--accent2) var(--pct), var(--border) 0);
+            display: flex; align-items: center; justify-content: center;
+            margin: 0 auto 30px;
+            position: relative;
+        }
+        .result-circle::after {
+            content: '';
+            position: absolute;
+            width: 120px; height: 120px;
+            border-radius: 50%;
+            background: var(--card);
+        }
+        .result-score {
+            position: relative; z-index: 1;
+            font-family: 'Unbounded', sans-serif;
+            font-size: 2rem;
+            font-weight: 900;
+            color: var(--accent2);
+        }
+        .btn-restart {
+            padding: 16px 40px;
+            background: linear-gradient(135deg, var(--accent), #06d6a0);
+            border: none; border-radius: 10px;
+            color: #fff;
+            font-family: 'Unbounded', sans-serif;
+            font-size: 0.85rem;
+            font-weight: 700;
+            cursor: pointer;
+        }
+        #quiz-area { display: block; }
+        /* Навигация */
+        .nav-panel {
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            z-index: 1000;
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 50px;
+            padding: 8px 15px;
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            backdrop-filter: blur(5px);
+        }
+        .nav-panel button {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            color: var(--text);
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 16px;
+        }
+        .nav-panel button.special {
+            background: var(--accent);
+            color: white;
+            border: none;
+        }
+        .nav-panel button.special2 {
+            background: var(--accent2);
+            color: white;
+            border: none;
+        }
+        #navInput {
+            width: 50px;
+            background: transparent;
+            border: none;
+            color: var(--text);
+            font-family: 'JetBrains Mono';
+            font-size: 14px;
+            text-align: center;
+            outline: none;
+            border-bottom: 1px solid var(--accent);
+        }
+    </style>
 </head>
 <body>
 <div class="container">
-  <header>
-    <h1>БАЗЫ ДАННЫХ</h1>
-    <p>Тест · 90 вопросов · Мгновенная проверка ответов</p>
-  </header>
+    <header>
+        <h1>БАЗЫ ДАННЫХ</h1>
+        <p>Тест · 90 вопросов · Мгновенная проверка ответов</p>
+    </header>
 
-  <div id="quiz-area">
-    <div class="progress-bar-wrap">
-      <div class="progress-bar-fill" id="progress-fill" style="width:0%"></div>
-    </div>
-    <div class="progress-text">
-      <span id="progress-label">Вопрос 1 из 90</span>
-      <span class="score-live" id="score-label">✓ 0</span>
+    <div id="quiz-area">
+        <div class="progress-bar-wrap">
+            <div class="progress-bar-fill" id="progress-fill" style="width:0%"></div>
+        </div>
+        <div class="progress-text">
+            <span id="progress-label">Вопрос 1 из 90</span>
+            <span class="score-live" id="score-label">✓ 0</span>
+        </div>
+
+        <div class="question-card" id="question-card">
+            <div class="q-number" id="q-number">ВОПРОС 01</div>
+            <div class="q-text" id="q-text"></div>
+            <div class="options" id="options"></div>
+            <div class="feedback" id="feedback">
+                <span class="feedback-icon" id="feedback-icon"></span>
+                <span id="feedback-text"></span>
+            </div>
+            <button class="btn-next" id="btn-next">Следующий вопрос →</button>
+        </div>
     </div>
 
-    <div class="question-card" id="question-card">
-      <div class="q-number" id="q-number">ВОПРОС 01</div>
-      <div class="q-text" id="q-text"></div>
-      <div class="options" id="options"></div>
-      <div class="feedback" id="feedback">
-  <span class="feedback-icon" id="feedback-icon"></span>
-  <span id="feedback-text"></span>
-</div>
-<button class="btn-submit-multi" id="btn-submit-multi" style="display: none; margin-top: 20px; width: 100%; padding: 16px; background: linear-gradient(135deg, var(--accent2), #06d6a0); border: none; border-radius: 10px; color: #fff; font-family: 'Unbounded', sans-serif; font-size: 0.85rem; font-weight: 700; cursor: pointer; letter-spacing: 0.05em;">
-  Подтвердить выбор →
-</button>
-<button class="btn-next" id="btn-next">
-  Следующий вопрос →
-</button>
+    <div class="result-screen" id="result-screen">
+        <div class="result-circle" id="result-circle">
+            <div class="result-score" id="result-score"></div>
+        </div>
+        <div class="result-title" id="result-title"></div>
+        <div class="result-sub" id="result-sub"></div>
+        <button class="btn-restart" id="btn-restart">↺ Пройти заново</button>
     </div>
-  </div>
-
-  <div class="result-screen" id="result-screen">
-    <div class="result-circle" id="result-circle">
-      <div class="result-score" id="result-score"></div>
-    </div>
-    <div class="result-title" id="result-title"></div>
-    <div class="result-sub" id="result-sub"></div>
-    <button class="btn-restart" id="btn-restart">↺ Пройти заново</button>
-  </div>
 </div>
 
-<!-- Блок навигации для перехода к любому вопросу -->
-<div style="position: fixed; top: 10px; right: 10px; z-index: 1000; background: var(--card); border: 1px solid var(--border); border-radius: 50px; padding: 8px 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.5); display: flex; gap: 10px; align-items: center; backdrop-filter: blur(5px);">
-  <button id="btn-first" style="background: var(--accent); border: none; color: white; width: 36px; height: 36px; border-radius: 50%; cursor: pointer; font-weight: bold; font-size: 16px;" title="Первый вопрос">⏮️</button>
-  <button id="btn-prev" style="background: var(--surface); border: 1px solid var(--border); color: var(--text); width: 36px; height: 36px; border-radius: 50%; cursor: pointer; font-weight: bold; font-size: 16px;" title="Предыдущий вопрос">◀</button>
-  
-  <div style="display: flex; align-items: center; gap: 5px; background: var(--surface); padding: 3px 10px; border-radius: 40px;">
-    <input type="number" id="navInput" min="1" max="90" value="1" style="width: 50px; background: transparent; border: none; color: var(--text); font-family: 'JetBrains Mono'; font-size: 14px; text-align: center; outline: none; border-bottom: 1px solid var(--accent);">
-    <span style="color: var(--muted); font-size: 14px;">/ 90</span>
-  </div>
-  
-  <button id="btn-next-nav" style="background: var(--surface); border: 1px solid var(--border); color: var(--text); width: 36px; height: 36px; border-radius: 50%; cursor: pointer; font-weight: bold; font-size: 16px;" title="Следующий вопрос">▶</button>
-  <button id="btn-last" style="background: var(--accent2); border: none; color: white; width: 36px; height: 36px; border-radius: 50%; cursor: pointer; font-weight: bold; font-size: 16px;" title="Последний вопрос">⏭️</button>
+<!-- Панель навигации -->
+<div class="nav-panel">
+    <button class="special" id="btn-first" title="Первый вопрос">⏮️</button>
+    <button id="btn-prev" title="Предыдущий вопрос">◀</button>
+    <div style="display: flex; align-items: center; gap: 5px; background: var(--surface); padding: 3px 10px; border-radius: 40px;">
+        <input type="number" id="navInput" min="1" max="90" value="1">
+        <span style="color: var(--muted);">/ 90</span>
+    </div>
+    <button id="btn-next-nav" title="Следующий вопрос">▶</button>
+    <button class="special2" id="btn-last" title="Последний вопрос">⏭️</button>
 </div>
 
 <script>
-// ============ ДАННЫЕ ============
-const questions = [
-  { q: "1. Какой протокол используется для безопасного удалённого доступа к серверам?", opts: ["FTP","HTTP","SSH","SMTP"], ans: 2 },
-  { q: "2. Что означает аббревиатура СУБД?", opts: ["Система унифицированных баз данных","Система управления базами данных","Служба управления базами данных","Служба управления базой данных"], ans: 1 },
-  { q: "3. Какой формат данных чаще всего используется для обмена информацией между системами через REST API?", opts: ["XML","CSV","JSON","YAML"], ans: 2 },
-  { q: "4. Нормализация базы данных направлена на устранение:", opts: ["Избыточности данных","Первичных ключей","Индексов","Транзакций"], ans: 0 },
-  { q: "5. Какое действие обычно выполняется для восстановления базы данных после сбоя?", opts: ["Переустановка СУБД","Восстановление из резервной копии","Очистка кэша","Перезагрузка сервера"], ans: 1 },
-  { q: "6. Какая база данных состоит из взаимосвязанного набора таблиц?", opts: ["Сетевая","Иерархическая","Реляционная","Объектная"], ans: 2 },
-  { q: "7. Последовательность действий над базой данных, в которой либо все действия выполняются успешно, либо не выполняется ни одно из них, называется:", opts: ["Транзакция","Последовательность","Протокол","Операция"], ans: 0 },
-  { q: "8. Что означает ACID в контексте транзакций?", opts: ["Автоматизация, целостность, доступность, надёжность","Адаптивность, контроль, идентичность, динамичность","Агрегация, кэширование, индексация, декомпозиция","Атомарность, согласованность, изоляция, надежность"], ans: 3 },
-  { q: "9. Что такое первичный ключ (PRIMARY KEY) в реляционной базе данных?", opts: ["Любой столбец с уникальными значениями","Внешний ключ, ссылающийся на другую таблицу","Поле (или набор полей), однозначно идентифицирующее запись в таблице","Индекс для ускорения поиска"], ans: 2 },
-  { q: "10. Сопоставьте тип ограничения с его назначением:", opts: ["1(PRIMARY KEY)-в(уникальность, не NULL), 2(FOREIGN KEY)-а(связь с другой таблицей), 3(NOT NULL)-г(значение не NULL), 4(UNIQUE)-б(уникальность значений)","1(PRIMARY KEY)-а(связь с другой таблицей), 2(FOREIGN KEY)-б(уникальность значений), 3(NOT NULL)-в(уникальность, не NULL), 4(UNIQUE)-г(значение не NULL)","1(PRIMARY KEY)-б(уникальность значений), 2(FOREIGN KEY)-а(связь с другой таблицей), 3(NOT NULL)-г(значение не NULL), 4(UNIQUE)-в(уникальность, не NULL)","1(PRIMARY KEY)-в(уникальность, не NULL), 2(FOREIGN KEY)-г(значение не NULL), 3(NOT NULL)-а(связь с другой таблицей), 4(UNIQUE)-б(уникальность значений)"], ans: 0 },
-  { q: "11. Где обычно хранятся параметры конфигурации СУБД?", opts: ["В оперативной памяти без сохранения","HTTP","В системной таблице","В конфигурационном файле (postgresql.conf, my.cnf)"], ans: 3 },
-  { q: "12. Какой параметр отвечает за максимальное количество одновременных подключений к СУБД?", opts: ["query_cache_size","max_connections","innodb_buffer_pool_size","log_level"], ans: 1 },
-  { q: "13. Что такое параметр конфигурации СУБД?", opts: ["Название таблицы в базе данных","Команда для выполнения запроса","Тип индекса","Настраиваемое значение, влияющее на поведение сервера или сессии данных"], ans: 3 },
-  { q: "14. Что произойдёт, если установить max_connections слишком низким?", opts: ["База данных автоматически переключится в режим только для чтения","Новые подключения будут отклоняться с ошибкой","Автоматически увеличится количество подключений при превышении значения","Удаление базы данных"], ans: 1 },
-  { q: "15. Какой инструмент используют для просмотра текущих значений параметров в активной сессии?", opts: ["Файловый менеджер","Команда SHOW parameter_name; или запрос к pg_settings","Почтовый клиент","Системный монитор ОС"], ans: 1 },
-  { q: "16. Параметр log_min_duration_statement записывает в журнал запросы, выполняющиеся дольше:", opts: ["Указанного времени в миллисекундах","1 секунды","1 минуты","100 запросов"], ans: 0 },
-  { q: "17. Что показывает представление pg_stat_statements?", opts: ["Список пользователей","Статистику по выполненным SQL-запросам (время, количество вызовов и т.д.)","Содержимое таблиц","Настройки сети"], ans: 1 },
-  { q: "18. Какой параметр контролирует уровень детализации журнала (log level)?", opts: ["log_statement","logging_collector","log_destination","log_level"], ans: 3 },
-  { q: "19. Определение внешних ключей относится к:", opts: ["Соответствию по типам","Ссылочной целостности","Целостности отношений"], ans: 1 },
-  { q: "20. Определение первичных ключей относится к:", opts: ["Соответствию по типам","Ссылочной целостности","Целостности отношений"], ans: 2 },
-  { q: "21. Что необходимо сделать перед установкой PostgreSQL на сервер?", opts: ["Удалить все существующие базы данных","Сразу запустить initdb","Настроить репликацию","Проверить соответствие системных требований (ОЗУ, место на диске, ОС)"], ans: 3 },
-  { q: "22. Какой порт по умолчанию использует PostgreSQL?", opts: ["80","5432","99","443"], ans: 1 },
-  { q: "23. Утилита createdb используется для:", opts: ["Создания новой базы данных","Удаления базы данных","Резервного копирования","Создания пользователя"], ans: 0 },
-  { q: "24. Что произойдёт при выполнении команды DROP DATABASE?", opts: ["База данных будет перемещена в архив","База данных станет доступной только для чтения","Будет создана резервная копия базы данных","База данных и все её объекты будут удалены"], ans: 3 },
-  { q: "25. Команда ALTER USER username WITH PASSWORD 'new_password' изменяет:", opts: ["Имя пользователя","Пароль пользователя","Права пользователя","Роль пользователя"], ans: 1 },
-  { q: "26. Как создать нового пользователя в PostgreSQL?", opts: ["CREATE ROLE username LOGIN; или CREATE USER username;","CREATE TABLE user;","ADD USER username;","INSERT INTO users VALUES (...);"], ans: 0 },
-  { q: "27. Как изменить владельца базы данных?", opts: ["CREATE DATABASE db_name OWNER username;","ALTER DATABASE db_name OWNER TO username;","CHANGE OWNER db_name TO username;","SET OWNER db_name = username;"], ans: 1 },
-  { q: "28. Что такое реплика в контексте PostgreSQL?", opts: ["Файл журнала","Временная таблица","Копия таблицы","Копия основного сервера для чтения или аварийного восстановления"], ans: 3 },
-  { q: "29. Зачем использовать pg_dumpall?", opts: ["Для восстановления одной таблицы","Для выгрузки всех баз данных кластера (включая роли и табличные пространства)","Для мониторинга производительности","Для смены пароля пользователя"], ans: 1 },
-  { q: "30. Что такое pg_stat_activity?", opts: ["Представление, показывающее текущие запросы и сессии","Файл конфигурации","Утилита резервного копирования","Параметр памяти"], ans: 0 },
-  { q: "31. Что означает SQL?", opts: ["Structured Query Language","Super Quick Language","Server Question Level","Supreme Query Language"], ans: 0 },
-  { q: "32. Назовите оператор языка SQL для создания запросов на выбор данных.", opts: ["SELECT","DISTINCT","WHERE","HAVING"], ans: 0 },
-  { q: "33. Назовите оператор команды SELECT, который обеспечивает возможность устранения избыточных значений.", opts: ["SELECT","DISTINCT","WHERE","HAVING"], ans: 1 },
-  { q: "34. Назовите предложение команды SELECT, которое позволяет производить выборку данных в зависимости от истинности поставленного условия.", opts: ["ORDER BY","DISTINCT","WHERE","CREATE"], ans: 2 },
-  { q: "35. Назовите предложение команды SELECT, которое позволяет группировать данные.", opts: ["ORDER BY","GROUP BY","WHERE","CREATE"], ans: 1 },
-  { q: "36. Назовите предложение команды SELECT, которое позволяет устанавливать условия для агрегатных функций.", opts: ["SELECT","DISTINCT","WHERE","HAVING"], ans: 3 },
-  { q: "37. Назовите предложение команды SELECT, которое используется для сортировки результата запроса.", opts: ["ORDER BY","GROUP BY","WHERE","CREATE"], ans: 0 },
-  { q: "38. Среди предложенных названий выберите то, которое является названием агрегатной функции.", opts: ["COUNT","SUM","MAX","Все варианты верные"], ans: 3 },
-  { q: "39. Операторы AND, OR, NOT относятся к:", opts: ["Реляционным операторам","Логическим операторам","Специальным операторам","Агрегатным функциям"], ans: 1 },
-  { q: "40. Условие id_category in(1,3,5) аналогично следующему предикату:", opts: ["id_category=1 and id_category=3 and id_category=5","id_category=1 or id_category=3 or id_category=5","id_category>1 and id_category<5","id_category=1 or 3 or 5"], ans: 1 },
-  { q: "41. Какой из запросов вернет отсортированный по убыванию результат?", opts: ["SELECT name FROM product ORDER BY name","SELECT name FROM product GROUP BY name","SELECT name FROM product ORDER BY name ASC","SELECT name FROM product ORDER BY name DESC"], ans: 3 },
-  { q: "42. Какой запрос вернет отсортированный по возрастанию результат?", opts: ["SELECT name FROM product ORDER BY name ASC","SELECT name FROM product GROUP BY name","SELECT name FROM product ORDER BY name DESC","SELECT name FROM product GROUP BY name DESC"], ans: 0 },
-  { q: "43. Сколько строк вернет запрос SELECT AVG(price) FROM product?", opts: ["0","1","25","50"], ans: 1 },
-  { q: "44. Сколько строк вернет запрос SELECT AVG(price), SUM(price) FROM product?", opts: ["0","1","25","Зависит от содержимого таблицы product"], ans: 1 },
-  { q: "45. Сколько строк вернет запрос SELECT price FROM product?", opts: ["0","1","25","Зависит от содержимого таблицы product"], ans: 3 },
-  { q: "46. Количество товаров в таблице product вернет запрос:", opts: ["SELECT SUM(name) FROM product","SELECT COUNT(*) FROM product","SELECT MAX(name) FROM product","SELECT SUM(*) FROM product"], ans: 1 },
-  { q: "47. Какой запрос вернет все товары, у которых не задана цена?", opts: ["SELECT * FROM product WHERE price<>0","SELECT * FROM product WHERE price=0","SELECT * FROM product WHERE price IS NULL","SELECT * FROM product WHERE price IS NOT"], ans: 2 },
-  { q: "48. Какой из запросов содержит внутреннее соединение?", opts: ["FROM user LEFT JOIN user_buyer ON user.id=user_buyer.id","FROM user RIGHT JOIN user_buyer ON user.id=user_buyer.id","FROM user FULL OUTER JOIN user_buyer ON user.id=user_buyer.id","FROM user INNER JOIN user_buyer ON user.id=user_buyer.id"], ans: 3 },
-  { q: "49. Выберите оператор объединения результатов нескольких запросов.", opts: ["UNION","JOIN","INTERSECT","EXCEPT"], ans: 0 },
-  { q: "50. Какой из запросов содержит внешнее соединение?", opts: ["FROM user LEFT JOIN user_buyer ON user.id=user_buyer.id","FROM user JOIN user_buyer ON user.id=user_buyer.id","FROM user INNER JOIN user_buyer ON user.id=user_buyer.id"], ans: 0 },
-  { q: "51. Какой предикат возвращает true, если подзапрос содержит одну или более строк, иначе возвращает false?", opts: ["EXISTS","ALL","ANY","SOME"], ans: 0 },
-  { q: "52. Выражение price>ANY(SELECT cast FROM price_list) вернет true, если:", opts: ["Все поля cast из таблицы price_list меньше цены price","Хотя бы одно поле cast из таблицы price_list меньше цены price","Все поля cast из таблицы price_list больше цены price","Сумма всех полей cast из таблицы price_list меньше цены price"], ans: 1 },
-  { q: "53. Выражение price>SOME(SELECT cast FROM price_list) вернет true, если:", opts: ["Все поля cast из таблицы price_list меньше цены price","Хотя бы одно поле cast из таблицы price_list меньше цены price","Все поля cast из таблицы price_list больше цены price","Сумма всех полей cast из таблицы price_list меньше цены price"], ans: 1 },
-  { q: "54. Выражение price>ALL(SELECT cast FROM price_list) вернет true, если:", opts: ["Все поля cast из таблицы price_list меньше цены price","Хотя бы одно поле cast из таблицы price_list меньше цены price","Все поля cast из таблицы price_list больше цены price","Сумма всех полей cast из таблицы price_list меньше цены price"], ans: 0 },
-  { q: "55. Какова структура соединения таблиц?", opts: ["SELECT...FROM...JOIN...ON...","SELECT...JOIN...ON...FROM...","SELECT...JOIN...FROM...ON...","SELECT...FROM...ON..."], ans: 0 },
-  { q: "56. По умолчанию при объединении двух запросов дублирование строк:", opts: ["Исключается","Не исключается"], ans: 0 },
-  { q: "57. Функция CONCAT:", opts: ["Округляет число с заданной точностью","Осуществляет преобразование типов данных","Осуществляет конкатенацию строк","Переводит строку в нижний регистр"], ans: 2 },
-  { q: "58. Выберите оператор, который относится к DML (Data Manipulation Language).", opts: ["ALTER","CREATE","DROP","INSERT"], ans: 3 },
-  { q: "59. Выберите оператор, который относится к DDL (Data Definition Language).", opts: ["UNION","JOIN","INSERT","CREATE"], ans: 3 },
-  { q: "60. Выберите верный синтаксис DELETE выражения.", opts: ["DELETE FROM HAVING","DELETE FROM WHERE","DELETE WHERE","DELETE FROM ORDER BY"], ans: 1 },
-  { q: "61. Каким запросом можно удалить все записи из таблицы my_table (но не саму таблицу)?", opts: ["DELETE FROM my_table","DELETE my_table","DELETE TABLE my_table","DROP FROM my_table"], ans: 0 },
-  { q: "62. Какое ключевое слово используется для удаления таблицы?", opts: ["DESTROY","DROP","DELETE","UPDATE"], ans: 1 },
-  { q: "63. С помощью какого ключевого слова можно удалить записи таблицы?", opts: ["DESTROY","DROP","DELETE","UPDATE"], ans: 2 },
-  { q: "64. С помощью какого запроса можно поместить значение 'Perez' в поле LastName таблицы Persons?", opts: ["INSERT INTO Persons ('Perez') INTO LastName","INSERT ('Perez') INTO Persons (LastName)","INSERT INTO Persons (LastName) VALUES ('Perez')","INSERT INTO Persons VALUE ('Perez')"], ans: 2 },
-  { q: "65. Команда позволяющая добавить столбец в таблицу имеет вид:", opts: ["INSERT INTO имя_столбца VARCHAR(20)","ALTER TABLE имя_таблицы ADD имя_столбца VARCHAR(20)","ALTER TABLE имя_таблицы INSERT имя_столбца VARCHAR(20)","ALTER TABLE имя_таблицы DROP имя_столбца VARCHAR(20)"], ans: 1 },
-  { q: "66. Команда позволяющая удалить столбец из таблицы имеет вид:", opts: ["DELETE FROM имя_таблицы(имя_столбца)","ALTER TABLE имя_таблицы DELETE имя_столбца","ALTER TABLE имя_таблицы TO имя_столбца","ALTER TABLE имя_таблицы DROP имя_столбца"], ans: 3 },
-  { q: "67. Ограничение ссылочной целостности задается с помощью:", opts: ["PRIMARY KEY","FOREIGN KEY","CHECK","NOT NULL"], ans: 1 },
-  { q: "68. Ограничение уникальности задается с помощью:", opts: ["PRIMARY KEY","FOREIGN KEY","UNIQUE","NOT NULL"], ans: 2 },
-  { q: "69. Ограничение на отсутствие значения задается с помощью:", opts: ["PRIMARY KEY","FOREIGN KEY","UNIQUE","NOT NULL"], ans: 3 },
-  { q: "70. Запретить удалять строку из таблицы, если на нее есть ссылка из дочерней таблицы, позволяет команда:", opts: ["ON DELETE RESTRICT","ON DELETE CASCADE","ON UPDATE RESTRICT","ON DELETE SET NULLBY"], ans: 0 },
-  { q: "71. Сколько необходимо отношений для связи 1:1?", opts: ["Одно","Два","Три","Одно, два или три"], ans: 1 },
-  { q: "72. Сколько необходимо отношений для связи 1:М?", opts: ["Одно","Два","Три","Одно, два или три"], ans: 1 },
-  { q: "73. Сколько необходимо отношений для связи М:N?", opts: ["Одно","Два","Три","Одно, два или три"], ans: 2 },
-  { q: "74. Реальный или представляемый объект, информация о котором должна сохраниться в базе данных — это:", opts: ["Атрибут","Сущность","Связь","Кортеж"], ans: 1 },
-  { q: "75. Разбиение одной таблицы на две или более таблицы, обладающих лучшими свойствами при вставке, изменении и удалении данных — это:", opts: ["Моделирование","Целостность","Стандартизация","Декомпозиция"], ans: 3 },
-  { q: "76. Самый распространенный тип связи:", opts: ["Один к одному","Все к одному","Один ко многим","Рекурсивная"], ans: 2 },
-  { q: "77. Нормальная форма, в которой находится отношение, если оно находится в 1НФ и все его неключевые атрибуты зависят от всего ключа:", opts: ["1 НФ","2 НФ","3 НФ","4 НФ"], ans: 1 },
-  { q: "78. Нормальная форма, в которой находится отношение, если оно находится во 2НФ и не содержит транзитивных зависимостей:", opts: ["1 НФ","2 НФ","3 НФ","НФ Бойса-Кода"], ans: 2 },
-  { q: "79. Неполная функциональная зависимость — это зависимость:", opts: ["От части внешних ключей","От части альтернативного ключа","От части первичного ключа","От части внешнего ключа"], ans: 2 },
-  { q: "80. Нормальные формы вложены в порядке:", opts: ["1НФ, 2НФ, НФБК, 3НФ","НФБК, 1НФ, 2НФ, 3НФ","НФ, НФБК, 2НФ, 3НФ","1НФ, 2НФ, 3НФ, НФБК"], ans: 3 },
-  { q: "81. Какой оператор используется для создания новой таблицы?", opts: ["CREATE TABLE","ALTER TABLE","DROP TABLE","INSERT TABLE"], ans: 0 },
-  { q: "82. Какой оператор используется для изменения структуры существующей таблицы?", opts: ["CREATE TABLE","ALTER TABLE","DROP TABLE","INSERT TABLE"], ans: 1 },
-  { q: "83. Какой оператор используется для создания индекса?", opts: ["ADD INDEX","NEW INDEX","BUILD INDEX","CREATE INDEX"], ans: 3 },
-  { q: "84. Как создать именованное ограничение PRIMARY KEY при создании таблицы?", opts: ["CONSTRAINT constraint_name PRIMARY KEY","ADD PRIMARY KEY","DEFINE PRIMARY KEY","SET PRIMARY KEY"], ans: 0 },
-  { q: "85. Как ограничить количество возвращаемых строк?", opts: ["CONSTRAINT ROWS","RESTRICT","MAX ROWS","LIMIT"], ans: 3 },
-  { q: "86. Какой оператор используется для проверки вхождения значения в список?", opts: ["IN LIST","IN","LIST","CONTAINS"], ans: 1 },
-  { q: "87. Как обновить значения нескольких столбцов одновременно?", opts: ["UPDATE table SET column1 = value1, column2 = value2","UPDATE column1, column2","UPDATE MULTIPLE","CHANGE column1, column2"], ans: 0 },
-  { q: "88. Какая команда используется для переименования таблицы?", opts: ["RENAME TABLE","CHANGE NAME","ALTER TABLE RENAME TO","UPDATE NAME"], ans: 2 },
-  { q: "89. Как добавить значение по умолчанию для столбца уже существующей таблицы?", opts: ["SET DEFAULT","ALTER COLUMN SET DEFAULT","NEW DEFAULT","CREATE DEFAULT"], ans: 1 },
-  { q: "90. Какой оператор используется для выборки данных, которые находятся между двумя значениями?", opts: ["IN RANGEW","WITHIN","FROM TO","BETWEEN"], ans: 3 },
-];
+    // --- ДАННЫЕ (все 90 вопросов) ---
+    const questions = [
+        { q: "1. Какой протокол используется для безопасного удалённого доступа к серверам?", opts: ["FTP","HTTP","SSH","SMTP"], ans: 2 },
+        { q: "2. Что означает аббревиатура СУБД?", opts: ["Система унифицированных баз данных","Система управления базами данных","Служба управления базами данных","Служба управления базой данных"], ans: 1 },
+        { q: "3. Какой формат данных чаще всего используется для обмена информацией между системами через REST API?", opts: ["XML","CSV","JSON","YAML"], ans: 2 },
+        { q: "4. Нормализация базы данных направлена на устранение:", opts: ["Избыточности данных","Первичных ключей","Индексов","Транзакций"], ans: 0 },
+        { q: "5. Какое действие обычно выполняется для восстановления базы данных после сбоя?", opts: ["Переустановка СУБД","Восстановление из резервной копии","Очистка кэша","Перезагрузка сервера"], ans: 1 },
+        { q: "6. Какая база данных состоит из взаимосвязанного набора таблиц?", opts: ["Сетевая","Иерархическая","Реляционная","Объектная"], ans: 2 },
+        { q: "7. Последовательность действий над базой данных, в которой либо все действия выполняются успешно, либо не выполняется ни одно из них, называется:", opts: ["Транзакция","Последовательность","Протокол","Операция"], ans: 0 },
+        { q: "8. Что означает ACID в контексте транзакций?", opts: ["Автоматизация, целостность, доступность, надёжность","Адаптивность, контроль, идентичность, динамичность","Агрегация, кэширование, индексация, декомпозиция","Атомарность, согласованность, изоляция, надежность"], ans: 3 },
+        { q: "9. Что такое первичный ключ (PRIMARY KEY) в реляционной базе данных?", opts: ["Любой столбец с уникальными значениями","Внешний ключ, ссылающийся на другую таблицу","Поле (или набор полей), однозначно идентифицирующее запись в таблице","Индекс для ускорения поиска"], ans: 2 },
+        { q: "10. Сопоставьте тип ограничения с его назначением:", opts: ["1(PRIMARY KEY)-в(уникальность, не NULL), 2(FOREIGN KEY)-а(связь с другой таблицей), 3(NOT NULL)-г(значение не NULL), 4(UNIQUE)-б(уникальность значений)","1(PRIMARY KEY)-а(связь с другой таблицей), 2(FOREIGN KEY)-б(уникальность значений), 3(NOT NULL)-в(уникальность, не NULL), 4(UNIQUE)-г(значение не NULL)","1(PRIMARY KEY)-б(уникальность значений), 2(FOREIGN KEY)-а(связь с другой таблицей), 3(NOT NULL)-г(значение не NULL), 4(UNIQUE)-в(уникальность, не NULL)","1(PRIMARY KEY)-в(уникальность, не NULL), 2(FOREIGN KEY)-г(значение не NULL), 3(NOT NULL)-а(связь с другой таблицей), 4(UNIQUE)-б(уникальность значений)"], ans: 0 },
+        { q: "11. Где обычно хранятся параметры конфигурации СУБД?", opts: ["В оперативной памяти без сохранения","HTTP","В системной таблице","В конфигурационном файле (postgresql.conf, my.cnf)"], ans: 3 },
+        { q: "12. Какой параметр отвечает за максимальное количество одновременных подключений к СУБД?", opts: ["query_cache_size","max_connections","innodb_buffer_pool_size","log_level"], ans: 1 },
+        { q: "13. Что такое параметр конфигурации СУБД?", opts: ["Название таблицы в базе данных","Команда для выполнения запроса","Тип индекса","Настраиваемое значение, влияющее на поведение сервера или сессии данных"], ans: 3 },
+        { q: "14. Что произойдёт, если установить max_connections слишком низким?", opts: ["База данных автоматически переключится в режим только для чтения","Новые подключения будут отклоняться с ошибкой","Автоматически увеличится количество подключений при превышении значения","Удаление базы данных"], ans: 1 },
+        { q: "15. Какой инструмент используют для просмотра текущих значений параметров в активной сессии?", opts: ["Файловый менеджер","Команда SHOW parameter_name; или запрос к pg_settings","Почтовый клиент","Системный монитор ОС"], ans: 1 },
+        { q: "16. Параметр log_min_duration_statement записывает в журнал запросы, выполняющиеся дольше:", opts: ["Указанного времени в миллисекундах","1 секунды","1 минуты","100 запросов"], ans: 0 },
+        { q: "17. Что показывает представление pg_stat_statements?", opts: ["Список пользователей","Статистику по выполненным SQL-запросам (время, количество вызовов и т.д.)","Содержимое таблиц","Настройки сети"], ans: 1 },
+        { q: "18. Какой параметр контролирует уровень детализации журнала (log level)?", opts: ["log_statement","logging_collector","log_destination","log_level"], ans: 3 },
+        { q: "19. Определение внешних ключей относится к:", opts: ["Соответствию по типам","Ссылочной целостности","Целостности отношений"], ans: 1 },
+        { q: "20. Определение первичных ключей относится к:", opts: ["Соответствию по типам","Ссылочной целостности","Целостности отношений"], ans: 2 },
+        { q: "21. Что необходимо сделать перед установкой PostgreSQL на сервер?", opts: ["Удалить все существующие базы данных","Сразу запустить initdb","Настроить репликацию","Проверить соответствие системных требований (ОЗУ, место на диске, ОС)"], ans: 3 },
+        { q: "22. Какой порт по умолчанию использует PostgreSQL?", opts: ["80","5432","99","443"], ans: 1 },
+        { q: "23. Утилита createdb используется для:", opts: ["Создания новой базы данных","Удаления базы данных","Резервного копирования","Создания пользователя"], ans: 0 },
+        { q: "24. Что произойдёт при выполнении команды DROP DATABASE?", opts: ["База данных будет перемещена в архив","База данных станет доступной только для чтения","Будет создана резервная копия базы данных","База данных и все её объекты будут удалены"], ans: 3 },
+        { q: "25. Команда ALTER USER username WITH PASSWORD 'new_password' изменяет:", opts: ["Имя пользователя","Пароль пользователя","Права пользователя","Роль пользователя"], ans: 1 },
+        { q: "26. Как создать нового пользователя в PostgreSQL?", opts: ["CREATE ROLE username LOGIN; или CREATE USER username;","CREATE TABLE user;","ADD USER username;","INSERT INTO users VALUES (...);"], ans: 0 },
+        { q: "27. Как изменить владельца базы данных?", opts: ["CREATE DATABASE db_name OWNER username;","ALTER DATABASE db_name OWNER TO username;","CHANGE OWNER db_name TO username;","SET OWNER db_name = username;"], ans: 1 },
+        { q: "28. Что такое реплика в контексте PostgreSQL?", opts: ["Файл журнала","Временная таблица","Копия таблицы","Копия основного сервера для чтения или аварийного восстановления"], ans: 3 },
+        { q: "29. Зачем использовать pg_dumpall?", opts: ["Для восстановления одной таблицы","Для выгрузки всех баз данных кластера (включая роли и табличные пространства)","Для мониторинга производительности","Для смены пароля пользователя"], ans: 1 },
+        { q: "30. Что такое pg_stat_activity?", opts: ["Представление, показывающее текущие запросы и сессии","Файл конфигурации","Утилита резервного копирования","Параметр памяти"], ans: 0 },
+        { q: "31. Что означает SQL?", opts: ["Structured Query Language","Super Quick Language","Server Question Level","Supreme Query Language"], ans: 0 },
+        { q: "32. Назовите оператор языка SQL для создания запросов на выбор данных.", opts: ["SELECT","DISTINCT","WHERE","HAVING"], ans: 0 },
+        { q: "33. Назовите оператор команды SELECT, который обеспечивает возможность устранения избыточных значений.", opts: ["SELECT","DISTINCT","WHERE","HAVING"], ans: 1 },
+        { q: "34. Назовите предложение команды SELECT, которое позволяет производить выборку данных в зависимости от истинности поставленного условия.", opts: ["ORDER BY","DISTINCT","WHERE","CREATE"], ans: 2 },
+        { q: "35. Назовите предложение команды SELECT, которое позволяет группировать данные.", opts: ["ORDER BY","GROUP BY","WHERE","CREATE"], ans: 1 },
+        { q: "36. Назовите предложение команды SELECT, которое позволяет устанавливать условия для агрегатных функций.", opts: ["SELECT","DISTINCT","WHERE","HAVING"], ans: 3 },
+        { q: "37. Назовите предложение команды SELECT, которое используется для сортировки результата запроса.", opts: ["ORDER BY","GROUP BY","WHERE","CREATE"], ans: 0 },
+        { q: "38. Среди предложенных названий выберите то, которое является названием агрегатной функции.", opts: ["COUNT","SUM","MAX","Все варианты верные"], ans: 3 },
+        { q: "39. Операторы AND, OR, NOT относятся к:", opts: ["Реляционным операторам","Логическим операторам","Специальным операторам","Агрегатным функциям"], ans: 1 },
+        { q: "40. Условие id_category in(1,3,5) аналогично следующему предикату:", opts: ["id_category=1 and id_category=3 and id_category=5","id_category=1 or id_category=3 or id_category=5","id_category>1 and id_category<5","id_category=1 or 3 or 5"], ans: 1 },
+        { q: "41. Какой из запросов вернет отсортированный по убыванию результат?", opts: ["SELECT name FROM product ORDER BY name","SELECT name FROM product GROUP BY name","SELECT name FROM product ORDER BY name ASC","SELECT name FROM product ORDER BY name DESC"], ans: 3 },
+        { q: "42. Какой запрос вернет отсортированный по возрастанию результат?", opts: ["SELECT name FROM product ORDER BY name ASC","SELECT name FROM product GROUP BY name","SELECT name FROM product ORDER BY name DESC","SELECT name FROM product GROUP BY name DESC"], ans: 0 },
+        { q: "43. Сколько строк вернет запрос SELECT AVG(price) FROM product?", opts: ["0","1","25","50"], ans: 1 },
+        { q: "44. Сколько строк вернет запрос SELECT AVG(price), SUM(price) FROM product?", opts: ["0","1","25","Зависит от содержимого таблицы product"], ans: 1 },
+        { q: "45. Сколько строк вернет запрос SELECT price FROM product?", opts: ["0","1","25","Зависит от содержимого таблицы product"], ans: 3 },
+        { q: "46. Количество товаров в таблице product вернет запрос:", opts: ["SELECT SUM(name) FROM product","SELECT COUNT(*) FROM product","SELECT MAX(name) FROM product","SELECT SUM(*) FROM product"], ans: 1 },
+        { q: "47. Какой запрос вернет все товары, у которых не задана цена?", opts: ["SELECT * FROM product WHERE price<>0","SELECT * FROM product WHERE price=0","SELECT * FROM product WHERE price IS NULL","SELECT * FROM product WHERE price IS NOT"], ans: 2 },
+        { q: "48. Какой из запросов содержит внутреннее соединение?", opts: ["FROM user LEFT JOIN user_buyer ON user.id=user_buyer.id","FROM user RIGHT JOIN user_buyer ON user.id=user_buyer.id","FROM user FULL OUTER JOIN user_buyer ON user.id=user_buyer.id","FROM user INNER JOIN user_buyer ON user.id=user_buyer.id"], ans: 3 },
+        { q: "49. Выберите оператор объединения результатов нескольких запросов.", opts: ["UNION","JOIN","INTERSECT","EXCEPT"], ans: 0 },
+        { q: "50. Какой из запросов содержит внешнее соединение?", opts: ["FROM user LEFT JOIN user_buyer ON user.id=user_buyer.id","FROM user JOIN user_buyer ON user.id=user_buyer.id","FROM user INNER JOIN user_buyer ON user.id=user_buyer.id"], ans: 0 },
+        { q: "51. Какой предикат возвращает true, если подзапрос содержит одну или более строк, иначе возвращает false?", opts: ["EXISTS","ALL","ANY","SOME"], ans: 0 },
+        { q: "52. Выражение price>ANY(SELECT cast FROM price_list) вернет true, если:", opts: ["Все поля cast из таблицы price_list меньше цены price","Хотя бы одно поле cast из таблицы price_list меньше цены price","Все поля cast из таблицы price_list больше цены price","Сумма всех полей cast из таблицы price_list меньше цены price"], ans: 1 },
+        { q: "53. Выражение price>SOME(SELECT cast FROM price_list) вернет true, если:", opts: ["Все поля cast из таблицы price_list меньше цены price","Хотя бы одно поле cast из таблицы price_list меньше цены price","Все поля cast из таблицы price_list больше цены price","Сумма всех полей cast из таблицы price_list меньше цены price"], ans: 1 },
+        { q: "54. Выражение price>ALL(SELECT cast FROM price_list) вернет true, если:", opts: ["Все поля cast из таблицы price_list меньше цены price","Хотя бы одно поле cast из таблицы price_list меньше цены price","Все поля cast из таблицы price_list больше цены price","Сумма всех полей cast из таблицы price_list меньше цены price"], ans: 0 },
+        { q: "55. Какова структура соединения таблиц?", opts: ["SELECT...FROM...JOIN...ON...","SELECT...JOIN...ON...FROM...","SELECT...JOIN...FROM...ON...","SELECT...FROM...ON..."], ans: 0 },
+        { q: "56. По умолчанию при объединении двух запросов дублирование строк:", opts: ["Исключается","Не исключается"], ans: 0 },
+        { q: "57. Функция CONCAT:", opts: ["Округляет число с заданной точностью","Осуществляет преобразование типов данных","Осуществляет конкатенацию строк","Переводит строку в нижний регистр"], ans: 2 },
+        { q: "58. Выберите оператор, который относится к DML (Data Manipulation Language).", opts: ["ALTER","CREATE","DROP","INSERT"], ans: 3 },
+        { q: "59. Выберите оператор, который относится к DDL (Data Definition Language).", opts: ["UNION","JOIN","INSERT","CREATE"], ans: 3 },
+        { q: "60. Выберите верный синтаксис DELETE выражения.", opts: ["DELETE FROM HAVING","DELETE FROM WHERE","DELETE WHERE","DELETE FROM ORDER BY"], ans: 1 },
+        { q: "61. Каким запросом можно удалить все записи из таблицы my_table (но не саму таблицу)?", opts: ["DELETE FROM my_table","DELETE my_table","DELETE TABLE my_table","DROP FROM my_table"], ans: 0 },
+        { q: "62. Какое ключевое слово используется для удаления таблицы?", opts: ["DESTROY","DROP","DELETE","UPDATE"], ans: 1 },
+        { q: "63. С помощью какого ключевого слова можно удалить записи таблицы?", opts: ["DESTROY","DROP","DELETE","UPDATE"], ans: 2 },
+        { q: "64. С помощью какого запроса можно поместить значение 'Perez' в поле LastName таблицы Persons?", opts: ["INSERT INTO Persons ('Perez') INTO LastName","INSERT ('Perez') INTO Persons (LastName)","INSERT INTO Persons (LastName) VALUES ('Perez')","INSERT INTO Persons VALUE ('Perez')"], ans: 2 },
+        { q: "65. Команда позволяющая добавить столбец в таблицу имеет вид:", opts: ["INSERT INTO имя_столбца VARCHAR(20)","ALTER TABLE имя_таблицы ADD имя_столбца VARCHAR(20)","ALTER TABLE имя_таблицы INSERT имя_столбца VARCHAR(20)","ALTER TABLE имя_таблицы DROP имя_столбца VARCHAR(20)"], ans: 1 },
+        { q: "66. Команда позволяющая удалить столбец из таблицы имеет вид:", opts: ["DELETE FROM имя_таблицы(имя_столбца)","ALTER TABLE имя_таблицы DELETE имя_столбца","ALTER TABLE имя_таблицы TO имя_столбца","ALTER TABLE имя_таблицы DROP имя_столбца"], ans: 3 },
+        { q: "67. Ограничение ссылочной целостности задается с помощью:", opts: ["PRIMARY KEY","FOREIGN KEY","CHECK","NOT NULL"], ans: 1 },
+        { q: "68. Ограничение уникальности задается с помощью:", opts: ["PRIMARY KEY","FOREIGN KEY","UNIQUE","NOT NULL"], ans: 2 },
+        { q: "69. Ограничение на отсутствие значения задается с помощью:", opts: ["PRIMARY KEY","FOREIGN KEY","UNIQUE","NOT NULL"], ans: 3 },
+        { q: "70. Запретить удалять строку из таблицы, если на нее есть ссылка из дочерней таблицы, позволяет команда:", opts: ["ON DELETE RESTRICT","ON DELETE CASCADE","ON UPDATE RESTRICT","ON DELETE SET NULLBY"], ans: 0 },
+        { q: "71. Сколько необходимо отношений для связи 1:1?", opts: ["Одно","Два","Три","Одно, два или три"], ans: 1 },
+        { q: "72. Сколько необходимо отношений для связи 1:М?", opts: ["Одно","Два","Три","Одно, два или три"], ans: 1 },
+        { q: "73. Сколько необходимо отношений для связи М:N?", opts: ["Одно","Два","Три","Одно, два или три"], ans: 2 },
+        { q: "74. Реальный или представляемый объект, информация о котором должна сохраниться в базе данных — это:", opts: ["Атрибут","Сущность","Связь","Кортеж"], ans: 1 },
+        { q: "75. Разбиение одной таблицы на две или более таблицы, обладающих лучшими свойствами при вставке, изменении и удалении данных — это:", opts: ["Моделирование","Целостность","Стандартизация","Декомпозиция"], ans: 3 },
+        { q: "76. Самый распространенный тип связи:", opts: ["Один к одному","Все к одному","Один ко многим","Рекурсивная"], ans: 2 },
+        { q: "77. Нормальная форма, в которой находится отношение, если оно находится в 1НФ и все его неключевые атрибуты зависят от всего ключа:", opts: ["1 НФ","2 НФ","3 НФ","4 НФ"], ans: 1 },
+        { q: "78. Нормальная форма, в которой находится отношение, если оно находится во 2НФ и не содержит транзитивных зависимостей:", opts: ["1 НФ","2 НФ","3 НФ","НФ Бойса-Кода"], ans: 2 },
+        { q: "79. Неполная функциональная зависимость — это зависимость:", opts: ["От части внешних ключей","От части альтернативного ключа","От части первичного ключа","От части внешнего ключа"], ans: 2 },
+        { q: "80. Нормальные формы вложены в порядке:", opts: ["1НФ, 2НФ, НФБК, 3НФ","НФБК, 1НФ, 2НФ, 3НФ","НФ, НФБК, 2НФ, 3НФ","1НФ, 2НФ, 3НФ, НФБК"], ans: 3 },
+        { q: "81. Какой оператор используется для создания новой таблицы?", opts: ["CREATE TABLE","ALTER TABLE","DROP TABLE","INSERT TABLE"], ans: 0 },
+        { q: "82. Какой оператор используется для изменения структуры существующей таблицы?", opts: ["CREATE TABLE","ALTER TABLE","DROP TABLE","INSERT TABLE"], ans: 1 },
+        { q: "83. Какой оператор используется для создания индекса?", opts: ["ADD INDEX","NEW INDEX","BUILD INDEX","CREATE INDEX"], ans: 3 },
+        { q: "84. Как создать именованное ограничение PRIMARY KEY при создании таблицы?", opts: ["CONSTRAINT constraint_name PRIMARY KEY","ADD PRIMARY KEY","DEFINE PRIMARY KEY","SET PRIMARY KEY"], ans: 0 },
+        { q: "85. Как ограничить количество возвращаемых строк?", opts: ["CONSTRAINT ROWS","RESTRICT","MAX ROWS","LIMIT"], ans: 3 },
+        { q: "86. Какой оператор используется для проверки вхождения значения в список?", opts: ["IN LIST","IN","LIST","CONTAINS"], ans: 1 },
+        { q: "87. Как обновить значения нескольких столбцов одновременно?", opts: ["UPDATE table SET column1 = value1, column2 = value2","UPDATE column1, column2","UPDATE MULTIPLE","CHANGE column1, column2"], ans: 0 },
+        { q: "88. Какая команда используется для переименования таблицы?", opts: ["RENAME TABLE","CHANGE NAME","ALTER TABLE RENAME TO","UPDATE NAME"], ans: 2 },
+        { q: "89. Как добавить значение по умолчанию для столбца уже существующей таблицы?", opts: ["SET DEFAULT","ALTER COLUMN SET DEFAULT","NEW DEFAULT","CREATE DEFAULT"], ans: 1 },
+        { q: "90. Какой оператор используется для выборки данных, которые находятся между двумя значениями?", opts: ["IN RANGEW","WITHIN","FROM TO","BETWEEN"], ans: 3 },
+    ];
 
-// ============ ПЕРЕМЕННЫЕ ============
-let answeredQuestions = {};
-let score = 0;
-let current = 0;
-let answered = false;
+    // --- Состояние ---
+    let answeredQuestions = {};   // { index: { chosen, correct, isCorrect } }
+    let score = 0;
+    let current = 0;              // индекс текущего вопроса (0..89)
+    let answered = false;
 
-// ============ ФУНКЦИИ ============
-function saveQuiz() {
-  try {
-    sessionStorage.setItem('quizProgress', JSON.stringify({
-      answeredQuestions, score, current
-    }));
-  } catch(e) {}
-}
-
-function loadProgress() {
-  try {
-    const saved = sessionStorage.getItem('quizProgress');
-    if (saved) {
-      const data = JSON.parse(saved);
-      answeredQuestions = data.answeredQuestions || {};
-      score = data.score || 0;
-      current = data.current || 0;
+    // --- Загрузка/сохранение в sessionStorage ---
+    function loadProgress() {
+        try {
+            const saved = sessionStorage.getItem('quizProgress');
+            if (saved) {
+                const data = JSON.parse(saved);
+                answeredQuestions = data.answeredQuestions || {};
+                score = data.score || 0;
+                current = data.current || 0;
+            }
+        } catch (e) {
+            console.warn('Не удалось загрузить прогресс', e);
+        }
     }
-  } catch(e) {}
-}
 
-function showFeedback(type, message) {
-  const fb = document.getElementById('feedback');
-  fb.className = `feedback ${type}-fb show`;
-  document.getElementById('feedback-icon').textContent = type === 'correct' ? '✓' : '✗';
-  document.getElementById('feedback-text').textContent = message;
-}
-
-function selectAnswer(chosen) {
-  if (answered) return;
-  
-  const q = questions[current];
-  const opts = document.querySelectorAll('.option');
-  
-  opts.forEach(o => o.disabled = true);
-  
-  const isCorrect = chosen === q.ans;
-  
-  if (isCorrect) {
-    score++;
-    opts[chosen].classList.add('correct');
-    showFeedback('correct', 'Правильно!');
-  } else {
-    opts[chosen].classList.add('wrong');
-    opts[q.ans].classList.add('correct');
-    showFeedback('wrong', `Правильный ответ: ${q.opts[q.ans]}`);
-  }
-  
-  answered = true;
-  answeredQuestions[current] = { chosen: chosen, correct: q.ans, isCorrect: isCorrect };
-  document.getElementById('score-label').textContent = `✓ ${score}`;
-  document.getElementById('btn-next').classList.add('show');
-  saveQuiz();
-}
-
-function nextQuestion() {
-  if (current < questions.length - 1) {
-    current++;
-    renderQuestion();
-  } else {
-    showResult();
-  }
-  saveQuiz();
-}
-
-function renderQuestion() {
-  const q = questions[current];
-  answered = false;
-  
-  document.getElementById('q-number').textContent = `ВОПРОС ${String(current+1).padStart(2,'0')}`;
-  document.getElementById('q-text').innerHTML = q.q.replace(/\n/g, '<br>');
-  document.getElementById('progress-label').textContent = `Вопрос ${current+1} из ${questions.length}`;
-  document.getElementById('score-label').textContent = `✓ ${score}`;
-  document.getElementById('progress-fill').style.width = `${((current) / questions.length) * 100}%`;
-  
-  const navInput = document.getElementById('navInput');
-  if (navInput) navInput.value = current + 1;
-  
-  document.getElementById('btn-submit-multi').style.display = 'none';
-  const nextBtn = document.getElementById('btn-next');
-  nextBtn.classList.remove('show');
-  nextBtn.textContent = current < questions.length - 1 ? 'Следующий вопрос →' : 'Завершить тест →';
-  
-  const optionsEl = document.getElementById('options');
-  optionsEl.innerHTML = '';
-  
-  q.opts.forEach((opt, i) => {
-    const btn = document.createElement('button');
-    btn.className = 'option';
-    btn.textContent = opt;
-    btn.onclick = () => selectAnswer(i);
-    optionsEl.appendChild(btn);
-  });
-  
-  document.getElementById('feedback').className = 'feedback';
-  
-  if (answeredQuestions[current] !== undefined) {
-    answered = true;
-    const prev = answeredQuestions[current];
-    const opts = document.querySelectorAll('.option');
-    opts.forEach(o => o.disabled = true);
-    
-    if (prev.isCorrect) {
-      opts[prev.chosen].classList.add('correct');
-      showFeedback('correct', 'Правильно!');
-    } else {
-      opts[prev.chosen].classList.add('wrong');
-      opts[prev.correct].classList.add('correct');
-      showFeedback('wrong', `Правильный ответ: ${q.opts[prev.correct]}`);
+    function saveProgress() {
+        try {
+            sessionStorage.setItem('quizProgress', JSON.stringify({
+                answeredQuestions,
+                score,
+                current
+            }));
+        } catch (e) {
+            console.warn('Не удалось сохранить прогресс', e);
+        }
     }
-    nextBtn.classList.add('show');
-  }
-}
 
-function showResult() {
-  document.getElementById('quiz-area').style.display = 'none';
-  const result = document.getElementById('result-screen');
-  result.className = 'result-screen show';
-  
-  const pct = Math.round((score / questions.length) * 100);
-  
-  let title, sub;
-  if (pct >= 90) { 
-    title = 'Отлично!'; 
-    sub = `Вы ответили правильно на ${score} из ${questions.length} вопросов.`; 
-  } else if (pct >= 70) { 
-    title = 'Хорошо!'; 
-    sub = `Вы ответили правильно на ${score} из ${questions.length} вопросов.`; 
-  } else if (pct >= 50) { 
-    title = 'Удовлетворительно'; 
-    sub = `Вы ответили правильно на ${score} из ${questions.length} вопросов.`; 
-  } else { 
-    title = 'Нужно подготовиться'; 
-    sub = `Вы ответили правильно на ${score} из ${questions.length} вопросов.`; 
-  }
-  
-  let detailsHTML = '';
-  const keys = Object.keys(answeredQuestions).map(Number).sort((a,b) => a-b);
-  
-  if (keys.length === 0) {
-    detailsHTML = '<p style="color: var(--muted); text-align: center; padding: 20px;">Нет сохраненных ответов.</p>';
-  } else {
-    for (const i of keys) {
-      const item = answeredQuestions[i];
-      const q = questions[i];
-      if (!item || !q) continue;
-      const statusColor = item.isCorrect ? 'var(--accent2)' : 'var(--wrong)';
-      const statusIcon = item.isCorrect ? '✅' : '❌';
-      
-      detailsHTML += `
-        <div style="margin-bottom: 15px; padding: 15px; background: var(--card); border-radius: 8px; border-left: 4px solid ${statusColor};">
-          <div style="margin-bottom: 8px;"><span style="font-weight: bold; color: ${statusColor};">Вопрос ${i+1} ${statusIcon}</span></div>
-          <div style="margin-bottom: 8px; font-size: 0.9rem;">${q.q}</div>
-          <div style="color: var(--muted);">Ваш ответ: <span style="color: ${statusColor}; font-weight: bold;">${q.opts[item.chosen]}</span></div>
-          ${!item.isCorrect ? `<div style="color: var(--accent2); margin-top: 5px;">✅ Правильный: ${q.opts[item.correct]}</div>` : ''}
-        </div>`;
+    // --- Отображение вопроса ---
+    function renderQuestion() {
+        const q = questions[current];
+        if (!q) return;
+
+        answered = false; // сбрасываем флаг ответа на текущий вопрос
+
+        // Заголовок вопроса
+        document.getElementById('q-number').textContent = `ВОПРОС ${String(current + 1).padStart(2, '0')}`;
+        document.getElementById('q-text').innerHTML = q.q.replace(/\n/g, '<br>');
+        document.getElementById('progress-label').textContent = `Вопрос ${current + 1} из ${questions.length}`;
+        document.getElementById('score-label').textContent = `✓ ${score}`;
+        document.getElementById('progress-fill').style.width = `${(current / questions.length) * 100}%`;
+
+        // Поле навигации
+        const navInput = document.getElementById('navInput');
+        if (navInput) navInput.value = current + 1;
+
+        // Кнопка "Следующий вопрос"
+        const nextBtn = document.getElementById('btn-next');
+        nextBtn.classList.remove('show');
+        nextBtn.textContent = current < questions.length - 1 ? 'Следующий вопрос →' : 'Завершить тест →';
+
+        // Очистка списка опций
+        const optionsDiv = document.getElementById('options');
+        optionsDiv.innerHTML = '';
+
+        // Создание кнопок вариантов
+        q.opts.forEach((opt, idx) => {
+            const btn = document.createElement('button');
+            btn.className = 'option';
+            btn.textContent = opt;
+            btn.onclick = () => selectAnswer(idx);
+            optionsDiv.appendChild(btn);
+        });
+
+        // Сброс feedback
+        document.getElementById('feedback').className = 'feedback';
+
+        // Если на этот вопрос уже отвечали – восстанавливаем состояние
+        if (answeredQuestions.hasOwnProperty(current)) {
+            answered = true;
+            const prev = answeredQuestions[current];
+            const opts = document.querySelectorAll('.option');
+            opts.forEach(opt => opt.disabled = true);
+
+            if (prev.isCorrect) {
+                opts[prev.chosen].classList.add('correct');
+                showFeedback('correct', 'Правильно!');
+            } else {
+                opts[prev.chosen].classList.add('wrong');
+                opts[prev.correct].classList.add('correct');
+                showFeedback('wrong', `Правильный ответ: ${q.opts[prev.correct]}`);
+            }
+            nextBtn.classList.add('show');
+        }
     }
-  }
-  
-  result.innerHTML = `
-    <div class="result-circle" style="--pct: ${pct}%">
-      <div class="result-score">${pct}%</div>
-    </div>
-    <div class="result-title">${title}</div>
-    <div class="result-sub">${sub}</div>
-    
-    <div style="margin: 30px 0; text-align: left;">
-      <h3 style="font-family: 'Unbounded'; margin-bottom: 20px; color: var(--accent2);">📋 Детальные результаты:</h3>
-      <div style="max-height: 500px; overflow-y: auto; padding: 15px; background: var(--surface); border-radius: 10px; border: 1px solid var(--border);">
-        ${detailsHTML}
-      </div>
-    </div>
-    
-    <button class="btn-restart" onclick="restartQuiz()">↺ Пройти заново</button>
-  `;
-}
 
-function restartQuiz() {
-  sessionStorage.removeItem('quizProgress');
-  current = 0;
-  score = 0;
-  answered = false;
-  answeredQuestions = {};
-  
-  document.getElementById('result-screen').className = 'result-screen';
-  document.getElementById('quiz-area').style.display = 'block';
-  
-  renderQuestion();
-}
+    // --- Выбор ответа ---
+    function selectAnswer(chosen) {
+        if (answered) return;
 
-function goToQuestion(index) {
-  if (index < 0) index = 0;
-  if (index >= questions.length) index = questions.length - 1;
-  
-  current = index;
-  renderQuestion();
-}
+        const q = questions[current];
+        const opts = document.querySelectorAll('.option');
+        opts.forEach(opt => opt.disabled = true);
 
-// ============ ИНИЦИАЛИЗАЦИЯ ============
-window.onload = function() {
-  console.log('Страница загружена');
-  loadProgress();
-  renderQuestion();
-  
-  // Навигация
-  document.getElementById('btn-first').onclick = () => goToQuestion(0);
-  document.getElementById('btn-prev').onclick = () => goToQuestion(current - 1);
-  document.getElementById('btn-next-nav').onclick = () => goToQuestion(current + 1);
-  document.getElementById('btn-last').onclick = () => goToQuestion(questions.length - 1);
-  document.getElementById('btn-next').onclick = nextQuestion;
-  document.getElementById('btn-restart').onclick = restartQuiz;
-  
-  const navInput = document.getElementById('navInput');
-  navInput.addEventListener('keypress', function(e) {
-    if (e.key === 'Enter') {
-      let val = parseInt(this.value);
-      if (isNaN(val)) val = 1;
-      if (val < 1) val = 1;
-      if (val > questions.length) val = questions.length;
-      goToQuestion(val - 1);
+        const isCorrect = (chosen === q.ans);
+
+        if (isCorrect) {
+            score++;
+            opts[chosen].classList.add('correct');
+            showFeedback('correct', 'Правильно!');
+        } else {
+            opts[chosen].classList.add('wrong');
+            opts[q.ans].classList.add('correct');
+            showFeedback('wrong', `Правильный ответ: ${q.opts[q.ans]}`);
+        }
+
+        answered = true;
+        answeredQuestions[current] = {
+            chosen: chosen,
+            correct: q.ans,
+            isCorrect: isCorrect
+        };
+
+        document.getElementById('score-label').textContent = `✓ ${score}`;
+        document.getElementById('btn-next').classList.add('show');
+
+        saveProgress(); // сохраняем после каждого ответа
     }
-  });
-};
 
-// Клавиши
-document.addEventListener('keydown', function(e) {
-  if (e.altKey && e.key === 'ArrowLeft') {
-    e.preventDefault();
-    goToQuestion(current - 1);
-  } else if (e.altKey && e.key === 'ArrowRight') {
-    e.preventDefault();
-    goToQuestion(current + 1);
-  }
-});
+    // --- Отображение feedback ---
+    function showFeedback(type, message) {
+        const fb = document.getElementById('feedback');
+        fb.className = `feedback ${type}-fb show`;
+        document.getElementById('feedback-icon').textContent = type === 'correct' ? '✓' : '✗';
+        document.getElementById('feedback-text').textContent = message;
+    }
+
+    // --- Переход к следующему вопросу ---
+    function nextQuestion() {
+        if (current < questions.length - 1) {
+            current++;
+            renderQuestion();
+            saveProgress(); // сохраняем текущую позицию
+        } else {
+            showResult();
+        }
+    }
+
+    // --- Показать результат ---
+    function showResult() {
+        document.getElementById('quiz-area').style.display = 'none';
+        const resultScreen = document.getElementById('result-screen');
+        resultScreen.classList.add('show');
+
+        const pct = Math.round((score / questions.length) * 100);
+        let title, sub;
+        if (pct >= 90) {
+            title = 'Отлично!';
+            sub = `Вы ответили правильно на ${score} из ${questions.length} вопросов. Превосходный результат!`;
+        } else if (pct >= 70) {
+            title = 'Хорошо!';
+            sub = `Вы ответили правильно на ${score} из ${questions.length} вопросов. Хороший результат, есть куда расти.`;
+        } else if (pct >= 50) {
+            title = 'Удовлетворительно';
+            sub = `Вы ответили правильно на ${score} из ${questions.length} вопросов. Стоит повторить материал.`;
+        } else {
+            title = 'Нужно подготовиться';
+            sub = `Вы ответили правильно на ${score} из ${questions.length} вопросов. Рекомендуем изучить тему глубже.`;
+        }
+
+        // Собираем детали
+        let detailsHTML = '';
+        const keys = Object.keys(answeredQuestions).map(Number).sort((a, b) => a - b);
+        if (keys.length === 0) {
+            detailsHTML = '<p style="color: var(--muted); text-align: center; padding: 20px;">Нет сохраненных ответов.</p>';
+        } else {
+            for (const i of keys) {
+                const item = answeredQuestions[i];
+                const q = questions[i];
+                if (!item || !q) continue;
+                const statusColor = item.isCorrect ? 'var(--accent2)' : 'var(--wrong)';
+                const statusIcon = item.isCorrect ? '✅' : '❌';
+                detailsHTML += `
+                    <div style="margin-bottom: 15px; padding: 15px; background: var(--card); border-radius: 8px; border-left: 4px solid ${statusColor};">
+                        <div style="margin-bottom: 8px;"><span style="font-weight: bold; color: ${statusColor};">Вопрос ${i+1} ${statusIcon}</span></div>
+                        <div style="margin-bottom: 8px; font-size: 0.9rem;">${q.q}</div>
+                        <div style="color: var(--muted);">Ваш ответ: <span style="color: ${statusColor}; font-weight: bold;">${q.opts[item.chosen]}</span></div>
+                        ${!item.isCorrect ? `<div style="color: var(--accent2); margin-top: 5px;">✅ Правильный: ${q.opts[item.correct]}</div>` : ''}
+                    </div>
+                `;
+            }
+        }
+
+        resultScreen.innerHTML = `
+            <div class="result-circle" style="--pct: ${pct}%">
+                <div class="result-score">${pct}%</div>
+            </div>
+            <div class="result-title">${title}</div>
+            <div class="result-sub">${sub}</div>
+            <div style="margin: 30px 0; text-align: left;">
+                <h3 style="font-family: 'Unbounded'; margin-bottom: 20px; color: var(--accent2);">📋 Детальные результаты:</h3>
+                <div style="max-height: 500px; overflow-y: auto; padding: 15px; background: var(--surface); border-radius: 10px; border: 1px solid var(--border);">
+                    ${detailsHTML}
+                </div>
+            </div>
+            <button class="btn-restart" id="restart-from-result">↺ Пройти заново</button>
+        `;
+
+        document.getElementById('restart-from-result').addEventListener('click', restartQuiz);
+    }
+
+    // --- Перезапуск теста ---
+    function restartQuiz() {
+        sessionStorage.removeItem('quizProgress');
+        answeredQuestions = {};
+        score = 0;
+        current = 0;
+        answered = false;
+
+        document.getElementById('result-screen').classList.remove('show');
+        document.getElementById('quiz-area').style.display = 'block';
+        renderQuestion();
+    }
+
+    // --- Навигация к конкретному вопросу ---
+    function goToQuestion(index) {
+        if (index < 0) index = 0;
+        if (index >= questions.length) index = questions.length - 1;
+        current = index;
+        renderQuestion();
+        saveProgress(); // сохраняем позицию
+    }
+
+    // --- Инициализация при загрузке страницы ---
+    document.addEventListener('DOMContentLoaded', function() {
+        console.log('DOM готов, запускаем тест');
+        loadProgress();       // загружаем сохранённый прогресс
+        renderQuestion();     // отображаем текущий вопрос
+
+        // Кнопки навигации
+        document.getElementById('btn-first').addEventListener('click', () => goToQuestion(0));
+        document.getElementById('btn-prev').addEventListener('click', () => goToQuestion(current - 1));
+        document.getElementById('btn-next-nav').addEventListener('click', () => goToQuestion(current + 1));
+        document.getElementById('btn-last').addEventListener('click', () => goToQuestion(questions.length - 1));
+
+        // Кнопка "Следующий вопрос" (основная)
+        document.getElementById('btn-next').addEventListener('click', nextQuestion);
+
+        // Кнопка рестарта (изначально скрыта, но вешаем обработчик на всякий случай)
+        document.getElementById('btn-restart').addEventListener('click', restartQuiz);
+
+        // Ввод номера вопроса в поле
+        const navInput = document.getElementById('navInput');
+        navInput.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                let val = parseInt(this.value, 10);
+                if (isNaN(val) || val < 1) val = 1;
+                if (val > questions.length) val = questions.length;
+                goToQuestion(val - 1);
+            }
+        });
+
+        // Горячие клавиши: Alt+Left / Alt+Right
+        document.addEventListener('keydown', function(e) {
+            if (e.altKey && e.key === 'ArrowLeft') {
+                e.preventDefault();
+                goToQuestion(current - 1);
+            } else if (e.altKey && e.key === 'ArrowRight') {
+                e.preventDefault();
+                goToQuestion(current + 1);
+            }
+        });
+    });
 </script>
-
-<style>
-#navInput::-webkit-outer-spin-button,
-#navInput::-webkit-inner-spin-button {
-  -webkit-appearance: none;
-  margin: 0;
-}
-#navInput[type=number] {
-  -moz-appearance: textfield;
-}
-@media (max-width: 600px) {
-  .container { margin-top: 70px; }
-  div[style*="position: fixed; top: 10px; right: 10px;"] { padding: 5px 10px; gap: 5px; }
-  div[style*="position: fixed; top: 10px; right: 10px;"] button { width: 32px; height: 32px; font-size: 14px; }
-  #navInput { width: 45px; font-size: 13px; }
-}
-</style>
 </body>
 </html>
