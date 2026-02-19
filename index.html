@@ -299,10 +299,10 @@ transition: opacity 0.2s;
   <span class="feedback-icon" id="feedback-icon"></span>
   <span id="feedback-text"></span>
 </div>
-<button class="btn-submit-multi" id="btn-submit-multi" onclick="submitMulti()" style="display: none; margin-top: 20px; width: 100%; padding: 16px; background: linear-gradient(135deg, var(--accent2), #06d6a0); border: none; border-radius: 10px; color: #fff; font-family: 'Unbounded', sans-serif; font-size: 0.85rem; font-weight: 700; cursor: pointer; letter-spacing: 0.05em;">
+<button class="btn-submit-multi" id="btn-submit-multi" style="display: none; margin-top: 20px; width: 100%; padding: 16px; background: linear-gradient(135deg, var(--accent2), #06d6a0); border: none; border-radius: 10px; color: #fff; font-family: 'Unbounded', sans-serif; font-size: 0.85rem; font-weight: 700; cursor: pointer; letter-spacing: 0.05em;">
   Подтвердить выбор →
 </button>
-<button class="btn-next" id="btn-next" onclick="nextQuestion()">
+<button class="btn-next" id="btn-next">
   Следующий вопрос →
 </button>
     </div>
@@ -314,11 +314,26 @@ transition: opacity 0.2s;
     </div>
     <div class="result-title" id="result-title"></div>
     <div class="result-sub" id="result-sub"></div>
-    <button class="btn-restart" onclick="restartQuiz()">↺ Пройти заново</button>
+    <button class="btn-restart" id="btn-restart">↺ Пройти заново</button>
   </div>
 </div>
 
+<!-- Блок навигации для перехода к любому вопросу -->
+<div style="position: fixed; top: 10px; right: 10px; z-index: 1000; background: var(--card); border: 1px solid var(--border); border-radius: 50px; padding: 8px 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.5); display: flex; gap: 10px; align-items: center; backdrop-filter: blur(5px);">
+  <button id="btn-first" style="background: var(--accent); border: none; color: white; width: 36px; height: 36px; border-radius: 50%; cursor: pointer; font-weight: bold; font-size: 16px;" title="Первый вопрос">⏮️</button>
+  <button id="btn-prev" style="background: var(--surface); border: 1px solid var(--border); color: var(--text); width: 36px; height: 36px; border-radius: 50%; cursor: pointer; font-weight: bold; font-size: 16px;" title="Предыдущий вопрос">◀</button>
+  
+  <div style="display: flex; align-items: center; gap: 5px; background: var(--surface); padding: 3px 10px; border-radius: 40px;">
+    <input type="number" id="navInput" min="1" max="90" value="1" style="width: 50px; background: transparent; border: none; color: var(--text); font-family: 'JetBrains Mono'; font-size: 14px; text-align: center; outline: none; border-bottom: 1px solid var(--accent);">
+    <span style="color: var(--muted); font-size: 14px;">/ 90</span>
+  </div>
+  
+  <button id="btn-next-nav" style="background: var(--surface); border: 1px solid var(--border); color: var(--text); width: 36px; height: 36px; border-radius: 50%; cursor: pointer; font-weight: bold; font-size: 16px;" title="Следующий вопрос">▶</button>
+  <button id="btn-last" style="background: var(--accent2); border: none; color: white; width: 36px; height: 36px; border-radius: 50%; cursor: pointer; font-weight: bold; font-size: 16px;" title="Последний вопрос">⏭️</button>
+</div>
+
 <script>
+// ============ ДАННЫЕ ============
 const questions = [
   { q: "1. Какой протокол используется для безопасного удалённого доступа к серверам?", opts: ["FTP","HTTP","SSH","SMTP"], ans: 2 },
   { q: "2. Что означает аббревиатура СУБД?", opts: ["Система унифицированных баз данных","Система управления базами данных","Служба управления базами данных","Служба управления базой данных"], ans: 1 },
@@ -412,28 +427,13 @@ const questions = [
   { q: "90. Какой оператор используется для выборки данных, которые находятся между двумя значениями?", opts: ["IN RANGEW","WITHIN","FROM TO","BETWEEN"], ans: 3 },
 ];
 
-
-let answeredQuestions = {}; // { index: { chosen, correct, isCorrect } }
+// ============ ПЕРЕМЕННЫЕ ============
+let answeredQuestions = {};
 let score = 0;
 let current = 0;
 let answered = false;
-let selectedMulti = [];
-let isMulti = false;
-let userAnswers = [];
-let userAnswersDetails = [];
 
-// Загружаем сохранённый прогресс
-(function loadProgress() {
-  try {
-    const saved = JSON.parse(sessionStorage.getItem('quizProgress'));
-    if (saved) {
-      answeredQuestions = saved.answeredQuestions || {};
-      score = saved.score || 0;
-      current = saved.current || 0;
-    }
-  } catch(e) {}
-})();
-
+// ============ ФУНКЦИИ ============
 function saveQuiz() {
   try {
     sessionStorage.setItem('quizProgress', JSON.stringify({
@@ -442,139 +442,18 @@ function saveQuiz() {
   } catch(e) {}
 }
 
-function renderQuestion() {
-  const q = questions[current];
-  answered = false;
-  selectedMulti = [];
-  isMulti = Array.isArray(q.multi);
-
-  document.getElementById('q-number').textContent = `ВОПРОС ${String(current+1).padStart(2,'0')}`;
-  document.getElementById('q-text').innerHTML = q.q.replace(/\n/g, '<br>');
-  document.getElementById('progress-label').textContent = `Вопрос ${current+1} из ${questions.length}`;
-  document.getElementById('score-label').textContent = `✓ ${score}`;
-  document.getElementById('progress-fill').style.width = `${(current / questions.length) * 100}%`;
-  const navEl = document.getElementById('navInput');
-  if (navEl) navEl.value = current + 1;
-
-  const feedback = document.getElementById('feedback');
-  feedback.className = 'feedback';
-  
-  const btnNext = document.getElementById('btn-next');
-  btnNext.className = 'btn-next';
-  btnNext.textContent = current < questions.length - 1 ? 'Следующий вопрос →' : 'Завершить тест →';
-
-  const optionsEl = document.getElementById('options');
-  optionsEl.innerHTML = '';
-
-  q.opts.forEach((opt, i) => {
-    const btn = document.createElement('button');
-    btn.className = 'option';
-    btn.textContent = opt;
-    btn.onclick = isMulti ? () => toggleMulti(i) : () => selectAnswer(i);
-    optionsEl.appendChild(btn);
-  });
-
-  // Если уже отвечали — восстановить и заблокировать
-  if (answeredQuestions[current] !== undefined) {
-    answered = true;
-    const prev = answeredQuestions[current];
-    const opts = document.querySelectorAll('.option');
-    opts.forEach(o => { o.disabled = true; });
-    if (prev.isCorrect) {
-      opts[prev.chosen].classList.add('correct');
-      const fb = document.getElementById('feedback');
-      fb.className = 'feedback correct-fb show';
-      document.getElementById('feedback-icon').textContent = '✓';
-      document.getElementById('feedback-text').textContent = 'Правильно!';
-    } else {
-      opts[prev.chosen].classList.add('wrong');
-      opts[prev.correct].classList.add('correct');
-      const fb = document.getElementById('feedback');
-      fb.className = 'feedback wrong-fb show';
-      document.getElementById('feedback-icon').textContent = '✗';
-      document.getElementById('feedback-text').textContent = 'Правильный ответ: ' + q.opts[prev.correct];
+function loadProgress() {
+  try {
+    const saved = sessionStorage.getItem('quizProgress');
+    if (saved) {
+      const data = JSON.parse(saved);
+      answeredQuestions = data.answeredQuestions || {};
+      score = data.score || 0;
+      current = data.current || 0;
     }
-    document.getElementById('btn-next').classList.add('show');
-  }
-// Показываем нужную кнопку (добавьте этот код в конец renderQuestion)
-const submitBtn = document.getElementById('btn-submit-multi');
-const nextBtn = document.getElementById('btn-next');
-
-if (isMulti && !answered) {
-  // Для мультивыбора пока неподтверждённого
-  submitBtn.style.display = 'block';
-  nextBtn.style.display = 'none';
-} else if (isMulti && answered) {
-  // Для мультивыбора уже отвеченного
-  submitBtn.style.display = 'none';
-  nextBtn.style.display = 'block';
-} else {
-  // Для обычных вопросов
-  submitBtn.style.display = 'none';
-  nextBtn.style.display = 'block';
-}
+  } catch(e) {}
 }
 
-// Переключение выбора для мультивыбора
-function toggleMulti(index) {
-  if (answered) return;
-  const btn = document.querySelectorAll('.option')[index];
-  btn.classList.toggle('selected');
-  
-  if (selectedMulti.includes(index)) {
-    selectedMulti = selectedMulti.filter(i => i !== index);
-  } else {
-    selectedMulti.push(index);
-  }
-}
-
-// Отправка мультивыбора
-function submitMulti() {
-  if (answered || !isMulti) return;
-  
-  const q = questions[current];
-  const opts = document.querySelectorAll('.option');
-  const correctMulti = q.multi.sort();
-  const userMulti = selectedMulti.sort();
-  
-  const isCorrect = JSON.stringify(correctMulti) === JSON.stringify(userMulti);
-  
-  opts.forEach(o => o.disabled = true);
-  
-  if (isCorrect) {
-    score++;
-    correctMulti.forEach(i => opts[i].classList.add('correct'));
-    showFeedback('correct', 'Правильно!');
-  } else {
-    selectedMulti.forEach(i => opts[i].classList.add('wrong'));
-    correctMulti.forEach(i => opts[i].classList.add('correct'));
-    showFeedback('wrong', `Правильные ответы: ${correctMulti.map(i => q.opts[i]).join(', ')}`);
-  }
-  
-  answered = true;
-  document.getElementById('score-label').textContent = `✓ ${score}`;
-  
-  // Скрыть кнопку подтверждения
-  document.getElementById('btn-submit-multi').style.display = 'none';
-  
-  // Показать кнопку следующего вопроса
-  const nextBtn = document.getElementById('btn-next');
-  nextBtn.style.display = 'block';
-  nextBtn.classList.add('show');
-    // Сохраняем ответ пользователя для мультивыбора
-  userAnswers[current] = selectedMulti;
-  userAnswersDetails[current] = {
-    question: q.q,
-    userAnswer: selectedMulti.map(i => q.opts[i]).join(', '),
-    correctAnswer: q.multi.map(i => q.opts[i]).join(', '),
-    isCorrect: isCorrect,
-    type: 'multi'
-  };
-  
-  sessionStorage.setItem('userAnswers', JSON.stringify(userAnswersDetails));
-}
-
-// Показ подсказки
 function showFeedback(type, message) {
   const fb = document.getElementById('feedback');
   fb.className = `feedback ${type}-fb show`;
@@ -610,36 +489,86 @@ function selectAnswer(chosen) {
 }
 
 function nextQuestion() {
-  current++;
-  if (current >= questions.length) {
-    showResult();
+  if (current < questions.length - 1) {
+    current++;
+    renderQuestion();
   } else {
-    document.getElementById('question-card').style.animation = 'none';
-    const navInput = document.getElementById('navInput');
-    if (navInput) navInput.value = current + 1;
-    setTimeout(() => {
-      document.getElementById('question-card').style.animation = '';
-      renderQuestion();
-    }, 10);
+    showResult();
   }
   saveQuiz();
+}
+
+function renderQuestion() {
+  const q = questions[current];
+  answered = false;
+  
+  document.getElementById('q-number').textContent = `ВОПРОС ${String(current+1).padStart(2,'0')}`;
+  document.getElementById('q-text').innerHTML = q.q.replace(/\n/g, '<br>');
+  document.getElementById('progress-label').textContent = `Вопрос ${current+1} из ${questions.length}`;
+  document.getElementById('score-label').textContent = `✓ ${score}`;
+  document.getElementById('progress-fill').style.width = `${((current) / questions.length) * 100}%`;
+  
+  const navInput = document.getElementById('navInput');
+  if (navInput) navInput.value = current + 1;
+  
+  document.getElementById('btn-submit-multi').style.display = 'none';
+  const nextBtn = document.getElementById('btn-next');
+  nextBtn.classList.remove('show');
+  nextBtn.textContent = current < questions.length - 1 ? 'Следующий вопрос →' : 'Завершить тест →';
+  
+  const optionsEl = document.getElementById('options');
+  optionsEl.innerHTML = '';
+  
+  q.opts.forEach((opt, i) => {
+    const btn = document.createElement('button');
+    btn.className = 'option';
+    btn.textContent = opt;
+    btn.onclick = () => selectAnswer(i);
+    optionsEl.appendChild(btn);
+  });
+  
+  document.getElementById('feedback').className = 'feedback';
+  
+  if (answeredQuestions[current] !== undefined) {
+    answered = true;
+    const prev = answeredQuestions[current];
+    const opts = document.querySelectorAll('.option');
+    opts.forEach(o => o.disabled = true);
+    
+    if (prev.isCorrect) {
+      opts[prev.chosen].classList.add('correct');
+      showFeedback('correct', 'Правильно!');
+    } else {
+      opts[prev.chosen].classList.add('wrong');
+      opts[prev.correct].classList.add('correct');
+      showFeedback('wrong', `Правильный ответ: ${q.opts[prev.correct]}`);
+    }
+    nextBtn.classList.add('show');
+  }
 }
 
 function showResult() {
   document.getElementById('quiz-area').style.display = 'none';
   const result = document.getElementById('result-screen');
   result.className = 'result-screen show';
-  result.innerHTML = '';
-
+  
   const pct = Math.round((score / questions.length) * 100);
   
   let title, sub;
-  if (pct >= 90) { title = 'Отлично!'; sub = `Вы ответили правильно на ${score} из ${questions.length} вопросов. Превосходный результат!`; }
-  else if (pct >= 70) { title = 'Хорошо!'; sub = `Вы ответили правильно на ${score} из ${questions.length} вопросов. Хороший результат, есть куда расти.`; }
-  else if (pct >= 50) { title = 'Удовлетворительно'; sub = `Вы ответили правильно на ${score} из ${questions.length} вопросов. Стоит повторить материал.`; }
-  else { title = 'Нужно подготовиться'; sub = `Вы ответили правильно на ${score} из ${questions.length} вопросов. Рекомендуем изучить тему глубже.`; }
-
-  // Собираем детали из answeredQuestions
+  if (pct >= 90) { 
+    title = 'Отлично!'; 
+    sub = `Вы ответили правильно на ${score} из ${questions.length} вопросов.`; 
+  } else if (pct >= 70) { 
+    title = 'Хорошо!'; 
+    sub = `Вы ответили правильно на ${score} из ${questions.length} вопросов.`; 
+  } else if (pct >= 50) { 
+    title = 'Удовлетворительно'; 
+    sub = `Вы ответили правильно на ${score} из ${questions.length} вопросов.`; 
+  } else { 
+    title = 'Нужно подготовиться'; 
+    sub = `Вы ответили правильно на ${score} из ${questions.length} вопросов.`; 
+  }
+  
   let detailsHTML = '';
   const keys = Object.keys(answeredQuestions).map(Number).sort((a,b) => a-b);
   
@@ -652,18 +581,17 @@ function showResult() {
       if (!item || !q) continue;
       const statusColor = item.isCorrect ? 'var(--accent2)' : 'var(--wrong)';
       const statusIcon = item.isCorrect ? '✅' : '❌';
-      const statusText = item.isCorrect ? 'Верно' : 'Неверно';
+      
       detailsHTML += `
         <div style="margin-bottom: 15px; padding: 15px; background: var(--card); border-radius: 8px; border-left: 4px solid ${statusColor};">
-          <div style="margin-bottom: 8px;"><span style="font-weight: bold; color: ${statusColor};">Вопрос ${i+1} ${statusIcon} ${statusText}</span></div>
+          <div style="margin-bottom: 8px;"><span style="font-weight: bold; color: ${statusColor};">Вопрос ${i+1} ${statusIcon}</span></div>
           <div style="margin-bottom: 8px; font-size: 0.9rem;">${q.q}</div>
           <div style="color: var(--muted);">Ваш ответ: <span style="color: ${statusColor}; font-weight: bold;">${q.opts[item.chosen]}</span></div>
           ${!item.isCorrect ? `<div style="color: var(--accent2); margin-top: 5px;">✅ Правильный: ${q.opts[item.correct]}</div>` : ''}
         </div>`;
     }
   }
-
-  // Собираем финальный HTML
+  
   result.innerHTML = `
     <div class="result-circle" style="--pct: ${pct}%">
       <div class="result-score">${pct}%</div>
@@ -684,128 +612,64 @@ function showResult() {
 
 function restartQuiz() {
   sessionStorage.removeItem('quizProgress');
-  current = 0; score = 0; answered = false; answeredQuestions = {};
+  current = 0;
+  score = 0;
+  answered = false;
+  answeredQuestions = {};
+  
   document.getElementById('result-screen').className = 'result-screen';
   document.getElementById('quiz-area').style.display = 'block';
-  document.getElementById('btn-next').textContent = 'Следующий вопрос →';
-  const navEl = document.getElementById('navInput');
-  if (navEl) navEl.value = 1;
+  
   renderQuestion();
 }
-
-renderQuestion();
-// Обновить счётчик после полной загрузки DOM (навигатор рендерится после скрипта)
-document.addEventListener('DOMContentLoaded', function() {
-  const navEl = document.getElementById('navInput');
-  if (navEl) navEl.value = current + 1;
-});
-</script>
-<!-- Блок навигации для перехода к любому вопросу -->
-<div style="position: fixed; top: 10px; right: 10px; z-index: 1000; background: var(--card); border: 1px solid var(--border); border-radius: 50px; padding: 8px 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.5); display: flex; gap: 10px; align-items: center; backdrop-filter: blur(5px);">
-  <button onclick="goToQuestion(0)" style="background: var(--accent); border: none; color: white; width: 36px; height: 36px; border-radius: 50%; cursor: pointer; font-weight: bold; font-size: 16px;" title="Первый вопрос">⏮️</button>
-  <button onclick="goToQuestion(current - 1)" style="background: var(--surface); border: 1px solid var(--border); color: var(--text); width: 36px; height: 36px; border-radius: 50%; cursor: pointer; font-weight: bold; font-size: 16px;" title="Предыдущий вопрос">◀</button>
-  
-  <div style="display: flex; align-items: center; gap: 5px; background: var(--surface); padding: 3px 10px; border-radius: 40px;">
-    <input type="number" id="navInput" min="1" max="93" value="1" style="width: 50px; background: transparent; border: none; color: var(--text); font-family: 'JetBrains Mono'; font-size: 14px; text-align: center; outline: none; border-bottom: 1px solid var(--accent);">
-    <span style="color: var(--muted); font-size: 14px;">/ 93</span>
-  </div>
-  
-  <button onclick="goToQuestion(current + 1)" style="background: var(--surface); border: 1px solid var(--border); color: var(--text); width: 36px; height: 36px; border-radius: 50%; cursor: pointer; font-weight: bold; font-size: 16px;" title="Следующий вопрос">▶</button>
-  <button onclick="goToQuestion(92)" style="background: var(--accent2); border: none; color: white; width: 36px; height: 36px; border-radius: 50%; cursor: pointer; font-weight: bold; font-size: 16px;" title="Последний вопрос">⏭️</button>
-</div>
-
-<!-- Модальное окно для подтверждения перехода -->
-<div id="navModal" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.8); z-index: 2000; align-items: center; justify-content: center;">
-  <div style="background: var(--card); border: 1px solid var(--border); border-radius: 20px; padding: 30px; max-width: 400px; text-align: center;">
-    <div style="font-size: 40px; margin-bottom: 20px;">⚠️</div>
-    <h3 style="font-family: 'Unbounded'; margin-bottom: 15px;">Перейти к вопросу <span id="modalQuestionNum"></span>?</h3>
-    <p style="color: var(--muted); margin-bottom: 25px;">Текущий прогресс будет сохранён</p>
-    <div style="display: flex; gap: 15px; justify-content: center;">
-      <button onclick="confirmNavigation()" style="background: linear-gradient(135deg, var(--accent), #9f5ff5); border: none; color: white; padding: 12px 30px; border-radius: 10px; font-family: 'Unbounded'; cursor: pointer; font-weight: 700;">Перейти</button>
-      <button onclick="closeModal()" style="background: var(--surface); border: 1px solid var(--border); color: var(--text); padding: 12px 30px; border-radius: 10px; font-family: 'Unbounded'; cursor: pointer; font-weight: 700;">Отмена</button>
-    </div>
-  </div>
-</div>
-
-<script>
-// Функция для навигации по вопросам
-let targetQuestion = 0;
 
 function goToQuestion(index) {
   if (index < 0) index = 0;
   if (index >= questions.length) index = questions.length - 1;
-  performNavigation(index);
-}
-
-function performNavigation(index) {
-  if (index < 0 || index >= questions.length) return;
   
   current = index;
+  renderQuestion();
+}
+
+// ============ ИНИЦИАЛИЗАЦИЯ ============
+window.onload = function() {
+  console.log('Страница загружена');
+  loadProgress();
+  renderQuestion();
   
-  // Анимация перехода
-  document.getElementById('question-card').style.animation = 'none';
-  setTimeout(() => {
-    document.getElementById('question-card').style.animation = '';
-    renderQuestion();
-  }, 10);
+  // Навигация
+  document.getElementById('btn-first').onclick = () => goToQuestion(0);
+  document.getElementById('btn-prev').onclick = () => goToQuestion(current - 1);
+  document.getElementById('btn-next-nav').onclick = () => goToQuestion(current + 1);
+  document.getElementById('btn-last').onclick = () => goToQuestion(questions.length - 1);
+  document.getElementById('btn-next').onclick = nextQuestion;
+  document.getElementById('btn-restart').onclick = restartQuiz;
   
-  // Обновляем значение в поле ввода
-  document.getElementById('navInput').value = current + 1;
-}
-
-function confirmNavigation() {
-  closeModal();
-  performNavigation(targetQuestion);
-}
-
-function closeModal() {
-  document.getElementById('navModal').style.display = 'none';
-}
-
-// Обработчик ввода с клавиатуры
-document.addEventListener('DOMContentLoaded', function() {
   const navInput = document.getElementById('navInput');
-  if (navInput) {
-    navInput.addEventListener('keypress', function(e) {
-      if (e.key === 'Enter') {
-        let val = parseInt(this.value);
-        if (isNaN(val)) val = 1;
-        if (val < 1) val = 1;
-        if (val > questions.length) val = questions.length;
-        
-        goToQuestion(val - 1);
-      }
-    });
-  }
-});
+  navInput.addEventListener('keypress', function(e) {
+    if (e.key === 'Enter') {
+      let val = parseInt(this.value);
+      if (isNaN(val)) val = 1;
+      if (val < 1) val = 1;
+      if (val > questions.length) val = questions.length;
+      goToQuestion(val - 1);
+    }
+  });
+};
 
-// Добавляем обработчик клавиш для быстрой навигации
+// Клавиши
 document.addEventListener('keydown', function(e) {
-  // Alt + ← или Ctrl + ←
-  if ((e.altKey || e.ctrlKey) && e.key === 'ArrowLeft') {
+  if (e.altKey && e.key === 'ArrowLeft') {
     e.preventDefault();
     goToQuestion(current - 1);
-  }
-  // Alt + → или Ctrl + →
-  else if ((e.altKey || e.ctrlKey) && e.key === 'ArrowRight') {
+  } else if (e.altKey && e.key === 'ArrowRight') {
     e.preventDefault();
     goToQuestion(current + 1);
-  }
-  // Alt + Home или Ctrl + Home
-  else if ((e.altKey || e.ctrlKey) && e.key === 'Home') {
-    e.preventDefault();
-    goToQuestion(0);
-  }
-  // Alt + End или Ctrl + End
-  else if ((e.altKey || e.ctrlKey) && e.key === 'End') {
-    e.preventDefault();
-    goToQuestion(questions.length - 1);
   }
 });
 </script>
 
 <style>
-/* Стили для поля ввода с браузерными стрелочками */
 #navInput::-webkit-outer-spin-button,
 #navInput::-webkit-inner-spin-button {
   -webkit-appearance: none;
@@ -814,55 +678,12 @@ document.addEventListener('keydown', function(e) {
 #navInput[type=number] {
   -moz-appearance: textfield;
 }
-
-/* Адаптив для мобильных */
 @media (max-width: 600px) {
-  /* Отступ сверху для контента, чтобы не перекрывало шапку */
-  .container {
-    margin-top: 70px;
-  }
-  
-  /* Уменьшаем навигацию на мобильных */
-  div[style*="position: fixed; top: 10px; right: 10px;"] {
-    padding: 5px 10px;
-    gap: 5px;
-  }
-  
-  div[style*="position: fixed; top: 10px; right: 10px;"] button {
-    width: 32px;
-    height: 32px;
-    font-size: 14px;
-  }
-  
-  #navInput {
-    width: 45px;
-    font-size: 13px;
-  }
-}
-
-/* Для очень маленьких экранов */
-@media (max-width: 380px) {
-  .container {
-    margin-top: 80px;
-  }
-  
-  div[style*="position: fixed; top: 10px; right: 10px;"] button {
-    width: 28px;
-    height: 28px;
-    font-size: 12px;
-  }
-  
-  #navInput {
-    width: 40px;
-    font-size: 12px;
-  }
-  
-  span[style*="color: var(--muted);"] {
-    font-size: 12px;
-  }
+  .container { margin-top: 70px; }
+  div[style*="position: fixed; top: 10px; right: 10px;"] { padding: 5px 10px; gap: 5px; }
+  div[style*="position: fixed; top: 10px; right: 10px;"] button { width: 32px; height: 32px; font-size: 14px; }
+  #navInput { width: 45px; font-size: 13px; }
 }
 </style>
 </body>
 </html>
-
-
